@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>DoPE Dashboard — FY 2026-2027</title>
+<style>
+  :root {
+    --purple:  #534AB7; --purple-light: #EEEDFE; --purple-dark: #3C3489;
+    --teal:    #1D9E75; --teal-light:   #E1F5EE;
+    --blue:    #378ADD; --blue-light:   #E6F1FB;
+    --green:   #639922; --green-light:  #EAF3DE;
+    --amber:   #BA7517; --amber-light:  #FAEEDA;
+    --red:     #A32D2D; --red-light:    #FCEBEB;
+    --coral:   #993C1D; --coral-light:  #FAECE7;
+    --gray:    #5F5E5A; --gray-light:   #F1EFE8;
+    --text:    #2C2C2A; --text-muted: #5F5E5A;
+    --border:  rgba(0,0,0,0.12);
+    --bg:      #F6F5F0; --card: #FFFFFF;
+    --radius:  10px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); font-size: 15px; }
+
+  /* NAV */
+  nav {
+    background: var(--purple); color: #fff;
+    padding: 0 24px; height: 52px;
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 100;
+  }
+  nav .brand { font-weight: 600; font-size: 15px; letter-spacing: .01em; }
+  nav .brand span { opacity: .7; font-weight: 400; margin-left: 8px; font-size: 13px; }
+  nav .nav-links { display: flex; gap: 6px; }
+  nav a {
+    color: rgba(255,255,255,.85); text-decoration: none;
+    padding: 6px 14px; border-radius: 6px; font-size: 13px;
+    transition: background .15s;
+  }
+  nav a:hover, nav a.active { background: rgba(255,255,255,.18); color: #fff; }
+
+  /* LAYOUT */
+  .page { max-width: 1100px; margin: 0 auto; padding: 28px 20px 60px; }
+  h2 { font-size: 16px; font-weight: 600; color: var(--text); margin-bottom: 14px; }
+  .section { margin-bottom: 32px; }
+
+  /* METRIC CARDS */
+  .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px,1fr)); gap: 12px; }
+  .metric-card {
+    background: var(--card); border: 0.5px solid var(--border);
+    border-radius: var(--radius); padding: 16px 18px;
+    border-left: 4px solid var(--accent, var(--teal));
+  }
+  .metric-card .label { font-size: 12px; color: var(--text-muted); margin-bottom: 6px; }
+  .metric-card .value { font-size: 28px; font-weight: 600; color: var(--accent, var(--teal)); }
+  .metric-card .sub   { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+  /* BUDGET BAR */
+  .budget-card {
+    background: var(--card); border: 0.5px solid var(--border);
+    border-radius: var(--radius); padding: 18px 22px;
+  }
+  .budget-header { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 13px; }
+  .budget-header .pct { font-weight: 600; color: var(--teal); }
+  .bar-track { background: var(--gray-light); border-radius: 6px; height: 10px; overflow: hidden; }
+  .bar-fill  { height: 100%; border-radius: 6px; background: var(--teal); transition: width .6s ease; }
+  .budget-footer { display: flex; justify-content: space-between; margin-top: 8px; font-size: 12px; color: var(--text-muted); }
+
+  /* DIVISION GRID */
+  .div-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px,1fr)); gap: 14px; }
+  .div-card {
+    background: var(--card); border: 0.5px solid var(--border);
+    border-radius: var(--radius); padding: 18px;
+    cursor: pointer; transition: box-shadow .15s, transform .1s;
+    border-top: 3px solid var(--accent, var(--blue));
+    text-decoration: none; color: inherit; display: block;
+  }
+  .div-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,.09); transform: translateY(-2px); }
+  .div-card .div-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+  .div-card .div-code { font-size: 18px; font-weight: 700; color: var(--accent, var(--blue)); }
+  .div-card .div-name { font-size: 11px; color: var(--text-muted); margin-top: 2px; line-height: 1.4; }
+  .div-card .budget-pct {
+    font-size: 12px; font-weight: 600; padding: 2px 8px;
+    background: var(--accent-light, var(--blue-light));
+    color: var(--accent, var(--blue)); border-radius: 20px;
+  }
+  .status-row { display: flex; gap: 6px; flex-wrap: wrap; margin: 10px 0; }
+  .badge {
+    font-size: 11px; padding: 2px 8px; border-radius: 20px; font-weight: 500;
+  }
+  .badge.completed  { background: var(--green-light); color: var(--green); }
+  .badge.ongoing    { background: var(--amber-light);  color: var(--amber); }
+  .badge.delayed    { background: var(--red-light);    color: var(--red); }
+  .badge.notstarted { background: var(--gray-light);   color: var(--gray); }
+  .div-bar-track { background: var(--gray-light); border-radius: 4px; height: 5px; margin-top: 10px; }
+  .div-bar-fill  { height: 100%; border-radius: 4px; background: var(--accent, var(--blue)); }
+
+  /* APT TABLE */
+  .table-wrap { background: var(--card); border: 0.5px solid var(--border); border-radius: var(--radius); overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead tr { background: var(--gray-light); }
+  th { padding: 9px 14px; text-align: left; font-weight: 600; font-size: 12px; color: var(--text-muted); white-space: nowrap; }
+  td { padding: 9px 14px; border-top: 0.5px solid var(--border); vertical-align: middle; }
+  .amount { font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .over { color: var(--red); font-weight: 600; }
+  .totals-row td { font-weight: 700; background: var(--gray-light); border-top: 2px solid var(--border); }
+  .div-pill { display: inline-block; font-size: 11px; padding: 2px 10px; border-radius: 20px; font-weight: 600; }
+  .revised-badge { display: inline-block; font-size: 10px; padding: 2px 7px; border-radius: 20px;
+    background: var(--purple-light); color: var(--purple); font-weight: 600; margin-left: 5px; vertical-align: middle; }
+  .pct-bar-wrap { display: flex; align-items: center; gap: 7px; }
+  .pct-bar-track { flex: 1; background: var(--gray-light); border-radius: 4px; height: 6px; min-width: 50px; }
+  .pct-bar-fill  { height: 100%; border-radius: 4px; }
+
+  /* LOADING / ERROR */
+  .loading { text-align: center; padding: 40px; color: var(--text-muted); font-size: 14px; }
+  .err { background: var(--red-light); color: var(--red); border-radius: 8px; padding: 12px 16px; font-size: 13px; }
+
+  /* RESPONSIVE */
+  @media(max-width:600px) {
+    .metrics { grid-template-columns: 1fr 1fr; }
+    .div-grid { grid-template-columns: 1fr; }
+    nav .brand span { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ── NAV ── -->
+<nav>
+  <div class="brand">
+    ACC · DoPE
+    <span>Performance Dashboard FY 2026–2027</span>
+  </div>
+  <div class="nav-links">
+    <a href="index.html" class="active">Home</a>
+    <a href="reports.html">Reports</a>
+  </div>
+</nav>
+
+<div class="page">
+
+  <!-- DEPT METRICS -->
+  <div class="section">
+    <h2>Department overview</h2>
+    <div class="metrics" id="metrics">
+      <div class="loading">Loading…</div>
+    </div>
+  </div>
+
+  <!-- BUDGET SUMMARY -->
+  <div class="section">
+    <div class="budget-card" id="budget-card">
+      <div class="budget-header">
+        <span>Department budget utilisation</span>
+        <span class="pct" id="budget-pct">—</span>
+      </div>
+      <div class="bar-track"><div class="bar-fill" id="budget-bar" style="width:0%"></div></div>
+      <div class="budget-footer">
+        <span id="budget-actual">Actual: Nu. —</span>
+        <span id="budget-balance">Balance: Nu. —</span>
+        <span id="budget-total">Allocated: Nu. —</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- APT TABLE -->
+  <div class="section">
+    <h2>Annual Performance Targets (APT) — FY 2026–2027</h2>
+    <div class="table-wrap">
+      <table id="apt-table">
+        <thead>
+          <tr>
+            <th>Division</th>
+            <th>KPI</th>
+            <th>Target</th>
+            <th>Budget (Nu.)</th>
+            <th>Actual (Nu.)</th>
+            <th>Balance (Nu.)</th>
+            <th>Planned acts.</th>
+            <th>Ad hoc</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="apt-body">
+          <tr><td colspan="8" class="loading">Loading…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- DIVISION CARDS -->
+  <div class="section">
+    <h2>Divisions</h2>
+    <div class="div-grid" id="div-grid">
+      <div class="loading">Loading…</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── CONFIG — replace with your Supabase project values ──
+const SUPA_URL = 'https://fiozcsxlnpvphrxwvzzy.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZpb3pjc3hsbnB2cGhyeHd2enp5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwNzkxNTYsImV4cCI6MjA5NjY1NTE1Nn0.1XZn61C23mE5LkltAC1VU57-iWySlJsy1_9-ZRAW1I8';
+
+const DIVISION_COLORS = {
+  ADMD: { accent: '#378ADD', light: '#E6F1FB' },
+  EAD:  { accent: '#1D9E75', light: '#E1F5EE' },
+  ED:   { accent: '#D85A30', light: '#FAECE7' },
+  PD:   { accent: '#534AB7', light: '#EEEDFE' },
+};
+
+async function query(path) {
+  const r = await fetch(SUPA_URL + path, {
+    headers: { apikey: SUPA_KEY, Authorization: 'Bearer ' + SUPA_KEY }
+  });
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+
+function fmt(n) {
+  return Number(n || 0).toLocaleString('en-IN');
+}
+
+async function load() {
+  try {
+    const [divRows, kpiRows] = await Promise.all([
+      query('/rest/v1/v_division_summary?select=*'),
+      query('/rest/v1/v_kpi_summary?select=*&order=division_code.asc,created_at.asc'),
+    ]);
+
+    let totKpis = 0, totAct = 0, totAdhoc = 0, totComp = 0, totOngoing = 0, totDelayed = 0, totNotStart = 0;
+    let totBudget = 0, totActual = 0;
+
+    divRows.forEach(r => {
+      totKpis     += +r.total_kpis;
+      totAct      += +r.total_activities;
+      totAdhoc    += +r.total_adhoc;
+      totComp     += +r.completed;
+      totOngoing  += +r.ongoing;
+      totDelayed  += +r.delayed;
+      totNotStart += +r.not_started;
+      totBudget   += +r.total_budget;
+      totActual   += +r.total_actual;
+    });
+
+    const pct = totBudget > 0 ? Math.round(totActual / totBudget * 100) : 0;
+    const bal = totBudget - totActual;
+
+    // Metric cards — dept level
+    document.getElementById('metrics').innerHTML = `
+      <div class="metric-card" style="--accent:var(--purple)">
+        <div class="label">Total KPIs</div>
+        <div class="value">${totKpis}</div>
+      </div>
+      <div class="metric-card" style="--accent:var(--teal)">
+        <div class="label">Total activities</div>
+        <div class="value">${totAct}</div>
+      </div>
+      <div class="metric-card" style="--accent:var(--green)">
+        <div class="label">Completed</div>
+        <div class="value">${totComp}</div>
+        <div class="sub">${totAct ? Math.round(totComp/totAct*100) : 0}% of total</div>
+      </div>
+      <div class="metric-card" style="--accent:var(--amber)">
+        <div class="label">Ongoing</div>
+        <div class="value">${totOngoing}</div>
+      </div>
+      <div class="metric-card" style="--accent:var(--red)">
+        <div class="label">Delayed</div>
+        <div class="value">${totDelayed}</div>
+      </div>
+      <div class="metric-card" style="--accent:var(--blue)">
+        <div class="label">Total budget (Nu.)</div>
+        <div class="value" style="font-size:18px">Nu. ${fmt(totBudget)}</div>
+      </div>
+      <div class="metric-card" style="--accent:var(--teal)">
+        <div class="label">Actual expenditure (Nu.)</div>
+        <div class="value" style="font-size:18px">Nu. ${fmt(totActual)}</div>
+        <div class="sub">${pct}% utilised</div>
+      </div>
+      <div class="metric-card" style="--accent:${bal < 0 ? 'var(--red)' : 'var(--gray)'}">
+        <div class="label">Balance (Nu.)</div>
+        <div class="value" style="font-size:18px;color:${bal < 0 ? 'var(--red)' : 'inherit'}">Nu. ${fmt(bal)}</div>
+      </div>
+    `;
+
+    // Budget bar
+    document.getElementById('budget-pct').textContent     = pct + '%';
+    document.getElementById('budget-bar').style.width     = Math.min(pct, 100) + '%';
+    document.getElementById('budget-bar').style.background = pct > 100 ? 'var(--red)' : 'var(--teal)';
+    document.getElementById('budget-actual').textContent  = 'Actual: Nu. ' + fmt(totActual);
+    document.getElementById('budget-balance').textContent = 'Balance: Nu. ' + fmt(bal);
+    document.getElementById('budget-total').textContent   = 'Allocated: Nu. ' + fmt(totBudget);
+
+    // APT table
+    renderAPT(kpiRows);
+
+    // Division cards
+    document.getElementById('div-grid').innerHTML = divRows.map(r => {
+      const c  = DIVISION_COLORS[r.code] || { accent: '#378ADD', light: '#E6F1FB' };
+      const dp = r.total_budget > 0 ? Math.round(r.total_actual / r.total_budget * 100) : 0;
+      return `
+        <a class="div-card" href="division.html?div=${r.code}"
+           style="--accent:${c.accent}; --accent-light:${c.light}">
+          <div class="div-header">
+            <div>
+              <div class="div-code">${r.code}</div>
+              <div class="div-name">${r.name}</div>
+            </div>
+            <div class="budget-pct">${dp}% budget</div>
+          </div>
+          <div class="status-row">
+            <span style="font-size:11px;color:var(--text-muted)">${r.total_kpis} KPI${r.total_kpis!=1?'s':''}</span>
+            <span class="badge completed">${r.completed} Done</span>
+            <span class="badge ongoing">${r.ongoing} Ongoing</span>
+            ${+r.delayed > 0 ? `<span class="badge delayed">${r.delayed} Delayed</span>` : ''}
+            ${+r.total_adhoc > 0 ? `<span style="font-size:11px;padding:2px 8px;border-radius:20px;background:#FDF0E6;color:#C25A00;font-weight:600">⚡ ${r.total_adhoc} ad hoc</span>` : ''}
+          </div>
+          <div class="div-bar-track">
+            <div class="div-bar-fill" style="width:${Math.min(dp,100)}%"></div>
+          </div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:6px">
+            Nu. ${fmt(r.total_actual)} of Nu. ${fmt(r.total_budget)}
+          </div>
+        </a>`;
+    }).join('');
+
+  } catch(e) {
+    document.getElementById('metrics').innerHTML =
+      `<div class="err">Error loading data: ${e.message}</div>`;
+  }
+}
+
+function renderAPT(kpis) {
+  const tb = document.getElementById('apt-body');
+  if (!kpis.length) {
+    tb.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--text-muted)">No KPIs entered yet. Go to a division to add KPIs.</td></tr>`;
+    return;
+  }
+
+  let tBud = 0, tAct = 0, tActs = 0;
+
+  // Group by division for row-spanning label
+  const grouped = {};
+  kpis.forEach(k => {
+    if (!grouped[k.division_code]) grouped[k.division_code] = [];
+    grouped[k.division_code].push(k);
+  });
+
+  let rows = '';
+  Object.entries(grouped).forEach(([div, dKpis]) => {
+    const c = DIVISION_COLORS[div] || { accent: '#378ADD', light: '#E6F1FB' };
+    dKpis.forEach((k, i) => {
+      const bal = +k.budget_allocated - +k.total_actual;
+      const pct = k.budget_allocated > 0 ? Math.round(k.total_actual / k.budget_allocated * 100) : 0;
+      const revised = !!k.original_target || !!k.original_budget;
+      tBud  += +k.budget_allocated;
+      tAct  += +k.total_actual;
+      tActs += +k.total_activities;
+      rows += `<tr>
+        ${i === 0 ? `<td rowspan="${dKpis.length}" style="vertical-align:middle">
+          <span class="div-pill" style="background:${c.light};color:${c.accent}">${div}</span>
+        </td>` : ''}
+        <td>
+          ${k.kpi_name}
+          ${revised ? `<span class="revised-badge" title="Revised mid-year">Revised</span>` : ''}
+        </td>
+        <td style="font-size:12px;color:var(--text-muted);max-width:200px">${k.target}</td>
+        <td class="amount">Nu. ${fmt(k.budget_allocated)}</td>
+        <td class="amount">Nu. ${fmt(k.total_actual)}</td>
+        <td class="amount ${bal < 0 ? 'over' : ''}">Nu. ${fmt(bal)}</td>
+        <td style="text-align:center">${k.total_activities}</td>
+        <td style="text-align:center">${+k.total_adhoc > 0
+          ? `<span style="font-size:11px;padding:2px 8px;border-radius:20px;background:#FDF0E6;color:#C25A00;font-weight:600">⚡ ${k.total_adhoc}</span>`
+          : '<span style="color:var(--text-muted)">—</span>'}</td>
+        <td>
+          <span class="badge ${k.status}">${k.status}</span>
+        </td>
+      </tr>`;
+    });
+  });
+
+  const tBal = tBud - tAct;
+  const tPct = tBud > 0 ? Math.round(tAct / tBud * 100) : 0;
+  rows += `<tr class="totals-row">
+    <td colspan="3">Department total</td>
+    <td class="amount">Nu. ${fmt(tBud)}</td>
+    <td class="amount">Nu. ${fmt(tAct)}</td>
+    <td class="amount ${tBal < 0 ? 'over' : ''}">Nu. ${fmt(tBal)}</td>
+    <td style="text-align:center">${tActs}</td>
+    <td><strong>${tPct}% used</strong></td>
+  </tr>`;
+
+  tb.innerHTML = rows;
+}
+
+load();
+</script>
+</body>
+</html>

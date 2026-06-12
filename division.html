@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Division — DoPE Dashboard</title>
+<style>
+  :root {
+    --purple:#534AB7; --purple-light:#EEEDFE;
+    --teal:#1D9E75;   --teal-light:#E1F5EE;
+    --blue:#378ADD;   --blue-light:#E6F1FB;
+    --green:#639922;  --green-light:#EAF3DE;
+    --amber:#BA7517;  --amber-light:#FAEEDA;
+    --red:#A32D2D;    --red-light:#FCEBEB;
+    --gray:#5F5E5A;   --gray-light:#F1EFE8;
+    --orange:#C25A00; --orange-light:#FDF0E6;
+    --text:#2C2C2A;   --text-muted:#5F5E5A;
+    --border:rgba(0,0,0,0.12);
+    --bg:#F6F5F0;     --card:#FFFFFF;
+    --radius:10px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:system-ui,sans-serif;background:var(--bg);color:var(--text);font-size:15px;}
+
+  nav{background:var(--purple);color:#fff;padding:0 24px;height:52px;
+    display:flex;align-items:center;justify-content:space-between;
+    position:sticky;top:0;z-index:100;}
+  nav .brand{font-weight:600;font-size:15px;}
+  nav .brand span{opacity:.7;font-weight:400;margin-left:8px;font-size:13px;}
+  nav .nav-links{display:flex;gap:6px;}
+  nav a{color:rgba(255,255,255,.85);text-decoration:none;padding:6px 14px;
+    border-radius:6px;font-size:13px;transition:background .15s;}
+  nav a:hover{background:rgba(255,255,255,.18);color:#fff;}
+
+  .page{max-width:1100px;margin:0 auto;padding:24px 20px 60px;}
+  .breadcrumb{font-size:13px;color:var(--text-muted);margin-bottom:18px;}
+  .breadcrumb a{color:var(--purple);text-decoration:none;}
+  .breadcrumb a:hover{text-decoration:underline;}
+
+  /* DIVISION HEADER */
+  .div-strip{background:var(--card);border:0.5px solid var(--border);
+    border-radius:var(--radius);padding:18px 22px;margin-bottom:20px;
+    border-left:4px solid var(--accent,var(--blue));}
+  .div-strip .top{display:flex;justify-content:space-between;
+    align-items:flex-start;flex-wrap:wrap;gap:12px;margin-bottom:14px;}
+  .div-strip .code{font-size:22px;font-weight:700;color:var(--accent,var(--blue));}
+  .div-strip .full-name{font-size:13px;color:var(--text-muted);margin-top:2px;}
+  .div-strip .head{font-size:12px;color:var(--text-muted);margin-top:2px;}
+  .metric-row{display:flex;gap:20px;flex-wrap:wrap;padding-top:12px;
+    border-top:0.5px solid var(--border);}
+  .metric-row .m .l{font-size:11px;color:var(--text-muted);}
+  .metric-row .m .v{font-size:16px;font-weight:700;margin-top:2px;}
+  .metric-row .m .v.over{color:var(--red);}
+  .metric-row .divider{width:1px;background:var(--border);align-self:stretch;margin:0 4px;}
+  .bar-wrap{margin-top:12px;}
+  .bar-label{display:flex;justify-content:space-between;font-size:12px;
+    color:var(--text-muted);margin-bottom:5px;}
+  .bar-track{background:var(--gray-light);border-radius:6px;height:8px;overflow:hidden;}
+  .bar-fill{height:100%;border-radius:6px;background:var(--teal);transition:width .5s;}
+
+  /* BADGES */
+  .badge{display:inline-block;font-size:11px;padding:3px 10px;
+    border-radius:20px;font-weight:500;white-space:nowrap;}
+  .badge.Completed  {background:var(--green-light); color:var(--green);}
+  .badge.Ongoing    {background:var(--amber-light);  color:var(--amber);}
+  .badge.Delayed    {background:var(--red-light);    color:var(--red);}
+  .badge.Not\ Started{background:var(--gray-light);  color:var(--gray);}
+  .badge.adhoc      {background:var(--orange-light); color:var(--orange); font-weight:700;}
+  .revised-badge{display:inline-block;font-size:10px;padding:2px 7px;
+    border-radius:20px;background:var(--purple-light);color:var(--purple);
+    font-weight:600;margin-left:6px;vertical-align:middle;cursor:help;}
+
+  /* BUTTONS */
+  .toolbar{display:flex;justify-content:space-between;align-items:center;
+    margin-bottom:14px;flex-wrap:wrap;gap:8px;}
+  .toolbar h2{font-size:16px;font-weight:600;margin:0;}
+  .btn{display:inline-flex;align-items:center;gap:5px;padding:8px 16px;
+    border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;
+    border:none;transition:opacity .15s;}
+  .btn:hover{opacity:.85;}
+  .btn-primary{background:var(--teal);color:#fff;}
+  .btn-purple{background:var(--purple);color:#fff;}
+  .btn-orange{background:var(--orange);color:#fff;}
+  .btn-outline{background:#fff;color:var(--text);border:1px solid var(--border);}
+  .btn-sm{padding:5px 11px;font-size:12px;}
+
+  /* KPI CARDS */
+  .kpi-list{display:flex;flex-direction:column;gap:14px;margin-bottom:28px;}
+  .kpi-card{background:var(--card);border:0.5px solid var(--border);
+    border-radius:var(--radius);overflow:hidden;}
+  .kpi-card-header{padding:16px 20px;cursor:pointer;
+    border-left:4px solid var(--accent,var(--blue));
+    display:flex;align-items:flex-start;justify-content:space-between;gap:12px;}
+  .kpi-card-header:hover{background:var(--blue-light);}
+  .kpi-left{flex:1;min-width:0;}
+  .kpi-name{font-size:14px;font-weight:600;margin-bottom:4px;line-height:1.4;}
+  .kpi-meta{font-size:12px;color:var(--text-muted);line-height:1.6;}
+  .kpi-meta .tl{font-weight:600;color:var(--text);}
+  .kpi-right{display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0;}
+  .kpi-budget{font-size:13px;font-weight:700;color:var(--accent,var(--blue));}
+  .kpi-budget-sub{font-size:11px;color:var(--text-muted);text-align:right;}
+  .kpi-progress{min-width:130px;}
+  .kpi-progress .bar-track{margin-top:4px;}
+  .chevron{font-size:14px;color:var(--text-muted);transition:transform .2s;
+    flex-shrink:0;margin-top:2px;}
+  .kpi-card.open .chevron{transform:rotate(90deg);}
+  .kpi-actions{display:flex;gap:6px;padding:0 20px 12px;
+    border-left:4px solid var(--accent,var(--blue));background:var(--card);}
+
+  /* REVISION LIST */
+  .revision-list{padding:12px 20px;border-top:0.5px solid var(--border);
+    background:#fafaf8;display:none;}
+  .revision-list.open{display:block;}
+  .revision-list h4{font-size:12px;font-weight:600;color:var(--text-muted);margin-bottom:8px;}
+  .rev-entry{font-size:12px;padding:6px 10px;border-radius:6px;
+    background:var(--purple-light);margin-bottom:5px;line-height:1.5;}
+  .rev-entry .rw{font-weight:600;color:var(--purple);}
+  .rev-entry .ro{text-decoration:line-through;color:var(--red);}
+  .rev-entry .rn{color:var(--green);font-weight:600;}
+
+  /* ACTIVITY TABLE */
+  .kpi-body{display:none;border-top:0.5px solid var(--border);}
+  .kpi-card.open .kpi-body{display:block;}
+  .act-toolbar{display:flex;justify-content:space-between;align-items:center;
+    padding:10px 20px;background:var(--gray-light);}
+  .act-toolbar span{font-size:12px;font-weight:600;color:var(--text-muted);}
+  .table-wrap{overflow-x:auto;}
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  thead tr{background:var(--gray-light);}
+  th{padding:8px 12px;text-align:left;font-weight:600;font-size:11px;
+    color:var(--text-muted);white-space:nowrap;}
+  td{padding:8px 12px;border-top:0.5px solid var(--border);vertical-align:middle;}
+  tr.act-row:hover td{background:var(--blue-light);cursor:pointer;}
+  tr.adhoc-row td{background:var(--orange-light);}
+  tr.adhoc-row:hover td{background:#fde0c8;cursor:pointer;}
+  .empty{text-align:center;padding:24px;color:var(--text-muted);font-size:13px;}
+  .amount{font-variant-numeric:tabular-nums;white-space:nowrap;}
+  .over{color:var(--red);font-weight:600;}
+
+  /* AD HOC SECTION */
+  .adhoc-section{background:var(--card);border:0.5px solid var(--orange);
+    border-radius:var(--radius);overflow:hidden;margin-bottom:14px;}
+  .adhoc-header{background:var(--orange-light);padding:14px 20px;
+    display:flex;justify-content:space-between;align-items:center;
+    border-left:4px solid var(--orange);}
+  .adhoc-header h3{font-size:14px;font-weight:700;color:var(--orange);
+    display:flex;align-items:center;gap:8px;}
+  .adhoc-header .sub{font-size:12px;color:var(--text-muted);margin-top:2px;}
+  .adhoc-stats{display:flex;gap:16px;flex-wrap:wrap;margin-top:6px;}
+  .adhoc-stats .s .l{font-size:11px;color:var(--text-muted);}
+  .adhoc-stats .s .v{font-size:14px;font-weight:700;color:var(--orange);}
+
+  /* LOADING / ERROR */
+  .loading{text-align:center;padding:32px;color:var(--text-muted);}
+  .err-box{background:var(--red-light);color:var(--red);border-radius:8px;
+    padding:12px 16px;font-size:13px;margin-bottom:14px;}
+
+  /* MODAL */
+  .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);
+    z-index:200;align-items:center;justify-content:center;padding:16px;}
+  .overlay.open{display:flex;}
+  .modal{background:#fff;border-radius:12px;width:100%;max-width:600px;
+    max-height:92vh;overflow-y:auto;padding:26px;position:relative;}
+  .modal h3{font-size:16px;margin-bottom:6px;}
+  .modal-sub{font-size:12px;color:var(--text-muted);margin-bottom:18px;}
+  .modal-close{position:absolute;top:16px;right:18px;background:none;
+    border:none;font-size:20px;cursor:pointer;color:var(--text-muted);}
+  .modal-close:hover{color:var(--text);}
+  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  .form-grid .full{grid-column:1/-1;}
+  label{display:block;font-size:12px;font-weight:600;color:var(--text-muted);margin-bottom:4px;}
+  input,select,textarea{width:100%;padding:8px 10px;border:1px solid var(--border);
+    border-radius:7px;font-size:13px;font-family:inherit;background:#fff;
+    color:var(--text);outline:none;}
+  input:focus,select:focus,textarea:focus{border-color:var(--purple);
+    box-shadow:0 0 0 3px var(--purple-light);}
+  textarea{resize:vertical;min-height:56px;}
+  .required{color:var(--red);}
+  .form-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:20px;}
+
+  /* AD HOC TOGGLE */
+  .adhoc-toggle-wrap{grid-column:1/-1;display:flex;align-items:center;gap:10px;
+    background:var(--orange-light);border-radius:8px;padding:10px 14px;
+    border:1px solid var(--orange);cursor:pointer;}
+  .adhoc-toggle-wrap input[type=checkbox]{width:16px;height:16px;cursor:pointer;accent-color:var(--orange);}
+  .adhoc-toggle-wrap .tl{font-size:13px;font-weight:600;color:var(--orange);}
+  .adhoc-toggle-wrap .ts{font-size:11px;color:var(--text-muted);margin-top:1px;}
+  .adhoc-fields{grid-column:1/-1;display:none;
+    background:var(--orange-light);border-radius:8px;padding:14px;
+    border:1px solid rgba(194,90,0,.2);gap:14px;}
+  .adhoc-fields.show{display:grid;grid-template-columns:1fr 1fr;}
+  .adhoc-fields .full{grid-column:1/-1;}
+  .adhoc-fields label{color:var(--orange);}
+  .adhoc-fields input,.adhoc-fields select,.adhoc-fields textarea{
+    border-color:rgba(194,90,0,.3);}
+  .adhoc-fields input:focus,.adhoc-fields select:focus{
+    border-color:var(--orange);box-shadow:0 0 0 3px var(--orange-light);}
+  .kpi-optional-note{font-size:11px;color:var(--orange);margin-top:3px;}
+
+  /* REVISION WARNING */
+  .revision-note{background:var(--amber-light);border-radius:7px;padding:10px 14px;
+    font-size:12px;color:var(--amber);margin-top:10px;display:none;}
+
+  @media(max-width:660px){
+    .form-grid{grid-template-columns:1fr;}
+    .form-grid .full,.adhoc-fields{grid-column:1;}
+    .adhoc-fields.show{grid-template-columns:1fr;}
+    .metric-row{gap:12px;}
+    .kpi-card-header{flex-wrap:wrap;}
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="brand">ACC · DoPE <span>Performance Dashboard FY 2026–2027</span></div>
+  <div class="nav-links">
+    <a href="index.html">Home</a>
+    <a href="reports.html">Reports</a>
+  </div>
+</nav>
+
+<div class="page">
+  <div class="breadcrumb">
+    <a href="index.html">Home</a> › <span id="bc-div">Division</span>
+  </div>
+
+  <!-- DIVISION STRIP -->
+  <div class="div-strip" id="div-strip">
+    <div class="loading">Loading…</div>
+  </div>
+
+  <!-- KPI + PLANNED ACTIVITIES -->
+  <div class="toolbar">
+    <h2>KPIs &amp; Planned Activities</h2>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-orange" id="btn-add-adhoc">＋ Add ad hoc activity</button>
+      <button class="btn btn-purple" id="btn-add-kpi">＋ Add KPI</button>
+    </div>
+  </div>
+  <div class="err-box" id="err" style="display:none"></div>
+  <div class="kpi-list" id="kpi-list">
+    <div class="loading">Loading…</div>
+  </div>
+
+  <!-- AD HOC SECTION -->
+  <div id="adhoc-section-wrap"></div>
+</div>
+
+<!-- ── KPI MODAL ── -->
+<div class="overlay" id="kpi-overlay">
+  <div class="modal">
+    <button class="modal-close" id="kpi-modal-close">✕</button>
+    <h3 id="kpi-modal-title">Add KPI</h3>
+    <div class="modal-sub">Annual Performance Target — planned KPI for FY 2026–2027</div>
+    <div class="form-grid">
+      <div class="full">
+        <label>KPI name <span class="required">*</span></label>
+        <input id="k-name" type="text" placeholder="e.g. No. of asset declarations verified"/>
+      </div>
+      <div class="full">
+        <label>Target <span class="required">*</span></label>
+        <input id="k-target" type="text" placeholder="e.g. 50 declarations verified by June 2027"/>
+      </div>
+      <div>
+        <label>Budget allocated (Nu.) <span class="required">*</span></label>
+        <input id="k-budget" type="number" min="0" placeholder="0"/>
+      </div>
+      <div>
+        <label>Status <span class="required">*</span></label>
+        <select id="k-status">
+          <option>Not Started</option><option>Ongoing</option>
+          <option>Completed</option><option>Delayed</option>
+        </select>
+      </div>
+      <div class="full">
+        <label>Created / updated by <span class="required">*</span></label>
+        <input id="k-by" type="text" placeholder="Your name"/>
+      </div>
+      <div class="full" id="revision-block" style="display:none">
+        <label>Reason for revision <span class="required">*</span></label>
+        <textarea id="k-reason" placeholder="Briefly explain why the target or budget is being revised…"></textarea>
+        <div class="revision-note" id="revision-note">
+          ⚠ You are changing the target or budget. This will be recorded as a mid-year revision.
+        </div>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-outline" id="kpi-cancel">Cancel</button>
+      <button class="btn btn-purple"  id="kpi-save">Save KPI</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── ACTIVITY MODAL (planned + ad hoc) ── -->
+<div class="overlay" id="act-overlay">
+  <div class="modal">
+    <button class="modal-close" id="act-modal-close">✕</button>
+    <h3 id="act-modal-title">Add activity</h3>
+    <div class="modal-sub" id="act-modal-sub"></div>
+    <div class="form-grid">
+
+      <!-- AD HOC TOGGLE -->
+      <label class="adhoc-toggle-wrap" id="adhoc-toggle-wrap">
+        <input type="checkbox" id="chk-adhoc"/>
+        <div>
+          <div class="tl">⚡ This is an ad hoc / unplanned activity</div>
+          <div class="ts">Toggle on if this activity was not part of the original APT</div>
+        </div>
+      </label>
+
+      <div class="full">
+        <label>Activity name <span class="required">*</span></label>
+        <input id="a-name" type="text" placeholder="e.g. Ad hoc workshop — Ministry request"/>
+      </div>
+      <div class="full">
+        <label>Activity target / description</label>
+        <input id="a-target" type="text" placeholder="e.g. Sensitise 50 staff on asset declaration"/>
+      </div>
+      <div>
+        <label id="a-kpi-label">Under KPI</label>
+        <select id="a-kpi">
+          <option value="">— Standalone (no KPI) —</option>
+        </select>
+        <div class="kpi-optional-note" id="kpi-optional-note" style="display:none">
+          Optional for ad hoc — select if this contributes to a KPI target
+        </div>
+      </div>
+      <div>
+        <label>Status <span class="required">*</span></label>
+        <select id="a-status">
+          <option>Not Started</option><option>Ongoing</option>
+          <option>Completed</option><option>Delayed</option>
+        </select>
+      </div>
+      <div>
+        <label>Expected completion</label>
+        <input id="a-expected" type="month"/>
+      </div>
+      <div>
+        <label>Created by <span class="required">*</span></label>
+        <input id="a-by" type="text" placeholder="Your name"/>
+      </div>
+
+      <!-- AD HOC EXTRA FIELDS (shown when toggle is on) -->
+      <div class="adhoc-fields" id="adhoc-fields">
+        <div class="full">
+          <label>Reason / background <span class="required">*</span></label>
+          <textarea id="a-reason" placeholder="e.g. Assigned by Ministry of Finance on short notice for staff sensitisation programme…"></textarea>
+        </div>
+        <div>
+          <label>Budget reallocated from <span class="required">*</span></label>
+          <select id="a-realloc-from">
+            <option value="">— Select source activity —</option>
+          </select>
+        </div>
+        <div>
+          <label>Amount reallocated (Nu.) <span class="required">*</span></label>
+          <input id="a-realloc-amt" type="number" min="0" placeholder="0"/>
+        </div>
+        <div class="full" id="realloc-balance-wrap" style="display:none">
+          <div style="font-size:12px;color:var(--text-muted);background:#fff;
+            border-radius:6px;padding:8px 10px;border:1px solid var(--border)">
+            Source activity remaining balance after reallocation:
+            <strong id="realloc-balance" style="color:var(--teal)">Nu. —</strong>
+          </div>
+        </div>
+      </div>
+
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-outline" id="act-cancel">Cancel</button>
+      <button class="btn btn-primary" id="act-save">Save activity</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SUPA_URL = 'https://fiozcsxlnpvphrxwvzzy.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZpb3pjc3hsbnB2cGhyeHd2enp5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwNzkxNTYsImV4cCI6MjA5NjY1NTE1Nn0.1XZn61C23mE5LkltAC1VU57-iWySlJsy1_9-ZRAW1I8';
+
+const DIV_COLORS = {
+  ADMD:{accent:'#378ADD',light:'#E6F1FB'},
+  EAD: {accent:'#1D9E75',light:'#E1F5EE'},
+  ED:  {accent:'#D85A30',light:'#FAECE7'},
+  PD:  {accent:'#534AB7',light:'#EEEDFE'},
+};
+
+const params  = new URLSearchParams(location.search);
+const divCode = (params.get('div')||'').toUpperCase();
+
+let divRow=null, kpis=[], activities=[], adhocActs=[], revisions=[];
+let editingKpiId=null, activeKpiId=null;
+let origKpiTarget='', origKpiBudget='';
+
+function fmt(n){ return Number(n||0).toLocaleString('en-IN'); }
+function showErr(m){ const e=document.getElementById('err'); e.textContent=m; e.style.display=m?'block':'none'; }
+
+async function api(method,path,body){
+  const r=await fetch(SUPA_URL+path,{
+    method,
+    headers:{apikey:SUPA_KEY,Authorization:'Bearer '+SUPA_KEY,
+      'Content-Type':'application/json',
+      Prefer:method==='POST'?'return=representation':''},
+    body:body?JSON.stringify(body):undefined
+  });
+  const txt=await r.text();
+  if(!r.ok) throw new Error(txt);
+  return txt?JSON.parse(txt):null;
+}
+
+// ── LOAD ──
+async function load(){
+  if(!divCode){ document.getElementById('div-strip').innerHTML='<div class="err-box">No division specified.</div>'; return; }
+  try {
+    const [divRows,kpiRows,actRows,adhocRows,revRows] = await Promise.all([
+      api('GET',`/rest/v1/v_division_summary?select=*&code=eq.${divCode}`),
+      api('GET',`/rest/v1/v_kpi_summary?select=*&division_code=eq.${divCode}&order=created_at.asc`),
+      api('GET',`/rest/v1/v_activity_detail?select=*&division_code=eq.${divCode}&is_adhoc=eq.false&order=created_at.asc`),
+      api('GET',`/rest/v1/v_adhoc_activities?select=*&division_code=eq.${divCode}&order=created_at.asc`),
+      api('GET',`/rest/v1/kpi_revisions?select=*&order=revised_at.desc`),
+    ]);
+    divRow=divRows[0]; kpis=kpiRows||[]; activities=actRows||[];
+    adhocActs=adhocRows||[]; revisions=revRows||[];
+    renderStrip();
+    renderKPIs();
+    renderAdhocSection();
+  } catch(e){ showErr('Error loading: '+e.message); }
+}
+
+// ── DIVISION STRIP ──
+function renderStrip(){
+  const d=divRow; if(!d) return;
+  const c=DIV_COLORS[d.code]||{accent:'#378ADD'};
+  const pct=d.total_budget>0?Math.round(d.total_actual/d.total_budget*100):0;
+  const bal=+d.total_budget - +d.total_actual;
+  document.getElementById('bc-div').textContent=d.code;
+  document.getElementById('div-strip').style.setProperty('--accent',c.accent);
+  document.getElementById('div-strip').innerHTML=`
+    <div class="top">
+      <div>
+        <div class="code">${d.code}</div>
+        <div class="full-name">${d.name}</div>
+        ${d.head_name?`<div class="head">Head: ${d.head_name}</div>`:''}
+      </div>
+    </div>
+    <div class="metric-row">
+      <div class="m"><div class="l">KPIs</div><div class="v" style="color:var(--purple)">${d.total_kpis||0}</div></div>
+      <div class="m"><div class="l">Planned activities</div><div class="v" style="color:var(--teal)">${d.total_activities}</div></div>
+      <div class="m"><div class="l">Completed</div><div class="v" style="color:var(--green)">${d.completed}</div></div>
+      <div class="m"><div class="l">Ongoing</div><div class="v" style="color:var(--amber)">${d.ongoing}</div></div>
+      <div class="m"><div class="l">Delayed</div><div class="v" style="color:var(--red)">${d.delayed}</div></div>
+      <div class="divider"></div>
+      <div class="m"><div class="l">Ad hoc activities</div><div class="v" style="color:var(--orange)">${d.total_adhoc||0}</div></div>
+      <div class="divider"></div>
+      <div class="m"><div class="l">Budget (Nu.)</div><div class="v" style="color:var(--accent)">Nu. ${fmt(d.total_budget)}</div></div>
+      <div class="m"><div class="l">Actual (Nu.)</div><div class="v">Nu. ${fmt(d.total_actual)}</div></div>
+      <div class="m"><div class="l">Balance (Nu.)</div><div class="v ${bal<0?'over':''}">Nu. ${fmt(bal)}</div></div>
+    </div>
+    <div class="bar-wrap">
+      <div class="bar-label"><span>Budget utilisation</span><span>${pct}%</span></div>
+      <div class="bar-track"><div class="bar-fill" style="width:${Math.min(pct,100)}%;background:${pct>100?'var(--red)':c.accent}"></div></div>
+    </div>`;
+}
+
+// ── KPI LIST ──
+function renderKPIs(){
+  const el=document.getElementById('kpi-list');
+  if(!kpis.length){
+    el.innerHTML=`<div style="text-align:center;padding:32px;color:var(--text-muted);
+      background:var(--card);border-radius:var(--radius);border:0.5px solid var(--border)">
+      No KPIs yet. Click "＋ Add KPI" to enter the Annual Performance Targets.</div>`;
+    return;
+  }
+  const c=DIV_COLORS[divCode]||{accent:'#378ADD',light:'#E6F1FB'};
+  el.innerHTML=kpis.map(k=>{
+    const planned=activities.filter(a=>a.kpi_id===k.id);
+    const adhoc=adhocActs.filter(a=>a.kpi_id===k.id);
+    const allActs=[...planned,...adhoc];
+    const pct=k.budget_allocated>0?Math.round(k.total_actual/k.budget_allocated*100):0;
+    const bal=+k.budget_allocated - +k.total_actual;
+    const kRevs=revisions.filter(r=>r.kpi_id===k.id);
+    const isRevised=!!k.original_target||!!k.original_budget;
+    return `
+    <div class="kpi-card" id="kpi-${k.id}" style="--accent:${c.accent}">
+      <div class="kpi-card-header" onclick="toggleKPI(${k.id})">
+        <div class="kpi-left">
+          <div class="kpi-name">${k.kpi_name}
+            ${isRevised?`<span class="revised-badge">Revised</span>`:''}
+          </div>
+          <div class="kpi-meta"><span class="tl">Target: </span>${k.target}
+            ${k.original_target&&k.original_target!==k.target
+              ?`<br><span style="color:var(--red);font-size:11px">Original: ${k.original_target}</span>`:''}
+          </div>
+          <div style="margin-top:6px;display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+            <span class="badge ${k.status}">${k.status}</span>
+            <span style="font-size:11px;color:var(--text-muted)">${planned.length} planned</span>
+            ${adhoc.length?`<span class="badge adhoc">⚡ ${adhoc.length} ad hoc</span>`:''}
+            <span style="font-size:11px;color:var(--text-muted)">${fmt(k.total_sessions)} sessions · ${fmt(k.total_participants)} participants</span>
+          </div>
+        </div>
+        <div class="kpi-right">
+          <div class="kpi-budget">Nu. ${fmt(k.budget_allocated)}</div>
+          <div class="kpi-budget-sub">Actual: Nu. ${fmt(k.total_actual)}<br>
+            Balance: <span class="${bal<0?'over':''}">Nu. ${fmt(bal)}</span></div>
+          <div class="kpi-progress">
+            <div style="font-size:11px;color:var(--text-muted);text-align:right">${pct}% used</div>
+            <div class="bar-track">
+              <div class="bar-fill" style="width:${Math.min(pct,100)}%;background:${pct>100?'var(--red)':c.accent}"></div>
+            </div>
+          </div>
+        </div>
+        <div class="chevron">›</div>
+      </div>
+
+      <div class="kpi-actions" style="--accent:${c.accent}">
+        <button class="btn btn-sm btn-outline" onclick="openEditKPI(${k.id},event)">✎ Edit KPI</button>
+        <button class="btn btn-sm btn-orange"  onclick="openAddAct(${k.id},true,event)">⚡ Add ad hoc</button>
+        ${kRevs.length?`<button class="btn btn-sm btn-outline" onclick="toggleRevisions(${k.id},event)">🕑 ${kRevs.length} revision${kRevs.length>1?'s':''}</button>`:''}
+      </div>
+
+      <div class="revision-list" id="rev-${k.id}">
+        <h4>Revision history</h4>
+        ${kRevs.map(r=>`<div class="rev-entry">
+          <span class="rw">${r.revised_by}</span>
+          <span style="color:var(--text-muted)"> changed ${r.field_changed} on ${new Date(r.revised_at).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}</span><br>
+          <span class="ro">${r.old_value}</span> → <span class="rn">${r.new_value}</span>
+          ${r.revision_reason?`<br><span style="color:var(--text-muted)">Reason: ${r.revision_reason}</span>`:''}
+        </div>`).join('')}
+      </div>
+
+      <div class="kpi-body" id="body-${k.id}">
+        <div class="act-toolbar">
+          <span>Activities under this KPI</span>
+          <button class="btn btn-sm btn-primary" onclick="openAddAct(${k.id},false,event)">＋ Add planned activity</button>
+        </div>
+        <div class="table-wrap"><table>
+          <thead><tr>
+            <th>#</th><th>Type</th><th>Activity name</th><th>Target</th>
+            <th>Sessions</th><th>Status</th>
+            <th>Budget (Nu.)</th><th>Actual (Nu.)</th><th>Balance</th>
+          </tr></thead>
+          <tbody>
+          ${allActs.length ? allActs.map((a,i)=>{
+            const ab=+a.budget_allocated||0, aa=+a.total_actual||0, abal=ab-aa;
+            const isAh=!!a.is_adhoc;
+            return `<tr class="${isAh?'adhoc-row':'act-row'}" onclick="location.href='activity.html?id=${a.id}'">
+              <td>${i+1}</td>
+              <td>${isAh?`<span class="badge adhoc">⚡ Ad hoc</span>`:'<span style="font-size:11px;color:var(--text-muted)">Planned</span>'}</td>
+              <td style="font-weight:500">${a.name}</td>
+              <td style="font-size:12px;color:var(--text-muted)">${a.target||'—'}</td>
+              <td>${a.session_count||0}</td>
+              <td><span class="badge ${a.status}">${a.status}</span></td>
+              <td class="amount">Nu. ${fmt(ab)}</td>
+              <td class="amount">Nu. ${fmt(aa)}</td>
+              <td class="amount ${abal<0?'over':''}">Nu. ${fmt(abal)}</td>
+            </tr>`;
+          }).join('')
+          :`<tr><td colspan="9" class="empty">No activities under this KPI yet.</td></tr>`}
+          </tbody>
+        </table></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── AD HOC SECTION (standalone — no KPI) ──
+function renderAdhocSection(){
+  const standalone=adhocActs.filter(a=>!a.kpi_id);
+  const wrap=document.getElementById('adhoc-section-wrap');
+  const totExp=adhocActs.reduce((s,a)=>s+ +a.total_actual,0);
+  const totP=adhocActs.reduce((s,a)=>s+ +a.total_participants,0);
+  const totRealloc=adhocActs.reduce((s,a)=>s+ +a.realloc_amount,0);
+
+  wrap.innerHTML=`
+    <div class="adhoc-section">
+      <div class="adhoc-header">
+        <div>
+          <h3>⚡ Ad hoc activities</h3>
+          <div class="sub">Unplanned activities assigned during the FY — tracked separately from APT</div>
+          <div class="adhoc-stats">
+            <div class="s"><div class="l">Total ad hoc</div><div class="v">${adhocActs.length}</div></div>
+            <div class="s"><div class="l">Standalone (no KPI)</div><div class="v">${standalone.length}</div></div>
+            <div class="s"><div class="l">Under a KPI</div><div class="v">${adhocActs.length-standalone.length}</div></div>
+            <div class="s"><div class="l">Total actual (Nu.)</div><div class="v">Nu. ${fmt(totExp)}</div></div>
+            <div class="s"><div class="l">Total reallocated (Nu.)</div><div class="v">Nu. ${fmt(totRealloc)}</div></div>
+            <div class="s"><div class="l">Total participants</div><div class="v">${fmt(totP)}</div></div>
+          </div>
+        </div>
+      </div>
+      ${standalone.length?`
+      <div class="table-wrap"><table>
+        <thead><tr>
+          <th>#</th><th>Activity name</th><th>Reason / background</th>
+          <th>Sessions</th><th>Status</th>
+          <th>Reallocated from</th><th>Realloc. amount (Nu.)</th>
+          <th>Actual (Nu.)</th><th>Participants</th>
+        </tr></thead>
+        <tbody>
+        ${standalone.map((a,i)=>`
+          <tr class="adhoc-row" onclick="location.href='activity.html?id=${a.id}'">
+            <td>${i+1}</td>
+            <td style="font-weight:500">${a.name}</td>
+            <td style="font-size:12px;color:var(--text-muted);max-width:180px;white-space:normal">${a.adhoc_reason||'—'}</td>
+            <td>${a.session_count||0}</td>
+            <td><span class="badge ${a.status}">${a.status}</span></td>
+            <td style="font-size:12px">${a.realloc_from_name||'—'}</td>
+            <td class="amount">Nu. ${fmt(a.realloc_amount)}</td>
+            <td class="amount">Nu. ${fmt(a.total_actual)}</td>
+            <td>${fmt(a.total_participants)}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table></div>`
+      :`<div class="empty" style="padding:20px;color:var(--text-muted);font-size:13px">
+          No standalone ad hoc activities. All ad hoc activities are linked to a KPI.</div>`}
+    </div>`;
+}
+
+// ── TOGGLE KPI ──
+function toggleKPI(id){
+  document.getElementById('kpi-'+id).classList.toggle('open');
+}
+function toggleRevisions(id,e){
+  e.stopPropagation();
+  document.getElementById('rev-'+id).classList.toggle('open');
+}
+
+// ── KPI MODAL ──
+function openAddKPI(){
+  editingKpiId=null; origKpiTarget=''; origKpiBudget='';
+  document.getElementById('kpi-modal-title').textContent='Add KPI';
+  ['k-name','k-target','k-budget','k-by','k-reason'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('k-status').value='Not Started';
+  document.getElementById('revision-block').style.display='none';
+  document.getElementById('revision-note').style.display='none';
+  document.getElementById('kpi-overlay').classList.add('open');
+}
+function openEditKPI(id,e){
+  e.stopPropagation();
+  editingKpiId=id;
+  const k=kpis.find(x=>x.id===id);
+  origKpiTarget=k.target; origKpiBudget=String(k.budget_allocated);
+  document.getElementById('kpi-modal-title').textContent='Edit KPI';
+  document.getElementById('k-name').value=k.kpi_name;
+  document.getElementById('k-target').value=k.target;
+  document.getElementById('k-budget').value=k.budget_allocated;
+  document.getElementById('k-status').value=k.status;
+  document.getElementById('k-by').value='';
+  document.getElementById('k-reason').value='';
+  document.getElementById('revision-block').style.display='block';
+  document.getElementById('revision-note').style.display='none';
+  document.getElementById('kpi-overlay').classList.add('open');
+}
+['k-target','k-budget'].forEach(id=>{
+  document.getElementById(id).addEventListener('input',()=>{
+    if(!editingKpiId) return;
+    const tc=document.getElementById('k-target').value!==origKpiTarget;
+    const bc=document.getElementById('k-budget').value!==origKpiBudget;
+    document.getElementById('revision-note').style.display=(tc||bc)?'block':'none';
+  });
+});
+function closeKPIModal(){ document.getElementById('kpi-overlay').classList.remove('open'); editingKpiId=null; }
+document.getElementById('kpi-modal-close').addEventListener('click',closeKPIModal);
+document.getElementById('kpi-cancel').addEventListener('click',closeKPIModal);
+document.getElementById('kpi-overlay').addEventListener('click',e=>{ if(e.target===e.currentTarget) closeKPIModal(); });
+document.getElementById('btn-add-kpi').addEventListener('click',openAddKPI);
+
+document.getElementById('kpi-save').addEventListener('click',async()=>{
+  const name=document.getElementById('k-name').value.trim();
+  const target=document.getElementById('k-target').value.trim();
+  const budget=document.getElementById('k-budget').value.trim();
+  const status=document.getElementById('k-status').value;
+  const by=document.getElementById('k-by').value.trim();
+  const reason=document.getElementById('k-reason').value.trim();
+  if(!name||!target||!budget||!by){ alert('Please fill all required fields.'); return; }
+  const tc=editingKpiId&&target!==origKpiTarget;
+  const bc=editingKpiId&&budget!==origKpiBudget;
+  if((tc||bc)&&!reason){ alert('Please provide a reason for the revision.'); return; }
+  const btn=document.getElementById('kpi-save');
+  btn.textContent='Saving…'; btn.disabled=true;
+  try {
+    if(editingKpiId){
+      const k=kpis.find(x=>x.id===editingKpiId);
+      const patch={kpi_name:name,target,budget_allocated:parseFloat(budget),status};
+      if(tc||bc){ patch.original_target=k.original_target||k.target; patch.original_budget=k.original_budget||k.budget_allocated; patch.revised_at=new Date().toISOString(); patch.revised_by=by; patch.revision_reason=reason; }
+      await api('PATCH',`/rest/v1/kpis?id=eq.${editingKpiId}`,patch);
+      if(tc) await api('POST','/rest/v1/kpi_revisions',{kpi_id:editingKpiId,field_changed:'Target',old_value:origKpiTarget,new_value:target,revised_by:by,revision_reason:reason});
+      if(bc) await api('POST','/rest/v1/kpi_revisions',{kpi_id:editingKpiId,field_changed:'Budget',old_value:origKpiBudget,new_value:budget,revised_by:by,revision_reason:reason});
+    } else {
+      const divData=await api('GET',`/rest/v1/divisions?select=id&code=eq.${divCode}`);
+      await api('POST','/rest/v1/kpis',{division_id:divData[0].id,kpi_name:name,target,budget_allocated:parseFloat(budget),status,fy:'2026-2027',created_by:by});
+    }
+    closeKPIModal(); await load();
+  } catch(e){ alert('Save failed: '+e.message); }
+  finally{ btn.textContent='Save KPI'; btn.disabled=false; }
+});
+
+// ── ACTIVITY MODAL ──
+function populateKpiSelect(preselect){
+  const sel=document.getElementById('a-kpi');
+  sel.innerHTML='<option value="">— Standalone (no KPI) —</option>';
+  kpis.forEach(k=>{ const o=document.createElement('option'); o.value=k.id; o.textContent=k.kpi_name; if(k.id===preselect) o.selected=true; sel.appendChild(o); });
+}
+
+function populateReallocSelect(){
+  const sel=document.getElementById('a-realloc-from');
+  sel.innerHTML='<option value="">— Select source activity —</option>';
+  // All planned activities in this division as potential sources
+  activities.forEach(a=>{ const o=document.createElement('option'); o.value=a.id; o.textContent=`${a.name} (Nu. ${fmt(+a.budget_allocated - +a.total_actual)} remaining)`; sel.appendChild(o); });
+}
+
+// Show remaining balance when source is selected
+document.getElementById('a-realloc-from').addEventListener('change',()=>{
+  const id=parseInt(document.getElementById('a-realloc-from').value);
+  const amt=parseFloat(document.getElementById('a-realloc-amt').value)||0;
+  const wrap=document.getElementById('realloc-balance-wrap');
+  if(!id){ wrap.style.display='none'; return; }
+  const src=activities.find(a=>a.id===id);
+  if(!src){ wrap.style.display='none'; return; }
+  const remaining=(+src.budget_allocated - +src.total_actual) - amt;
+  document.getElementById('realloc-balance').textContent='Nu. '+fmt(remaining);
+  document.getElementById('realloc-balance').style.color=remaining<0?'var(--red)':'var(--teal)';
+  wrap.style.display='block';
+});
+document.getElementById('a-realloc-amt').addEventListener('input',()=>{
+  document.getElementById('a-realloc-from').dispatchEvent(new Event('change'));
+});
+
+// Ad hoc toggle behaviour
+document.getElementById('chk-adhoc').addEventListener('change',()=>{
+  const on=document.getElementById('chk-adhoc').checked;
+  document.getElementById('adhoc-fields').classList.toggle('show',on);
+  document.getElementById('kpi-optional-note').style.display=on?'block':'none';
+  document.getElementById('act-save').className='btn '+(on?'btn-orange':'btn-primary');
+  document.getElementById('act-modal-sub').textContent=on
+    ?'⚡ Ad hoc — unplanned activity assigned during FY 2026–2027'
+    :'Planned activity under a KPI';
+});
+
+function openAddAct(kpiId, forceAdhoc, e){
+  if(e) e.stopPropagation();
+  activeKpiId=kpiId||null;
+  populateKpiSelect(kpiId);
+  populateReallocSelect();
+  document.getElementById('act-modal-title').textContent= forceAdhoc?'Add ad hoc activity':'Add activity';
+  document.getElementById('chk-adhoc').checked=!!forceAdhoc;
+  document.getElementById('adhoc-fields').classList.toggle('show',!!forceAdhoc);
+  document.getElementById('kpi-optional-note').style.display=forceAdhoc?'block':'none';
+  document.getElementById('act-save').className='btn '+(forceAdhoc?'btn-orange':'btn-primary');
+  document.getElementById('act-modal-sub').textContent=forceAdhoc
+    ?'⚡ Ad hoc — unplanned activity assigned during FY 2026–2027'
+    :'Planned activity under a KPI';
+  document.getElementById('realloc-balance-wrap').style.display='none';
+  ['a-name','a-target','a-reason','a-realloc-amt'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('a-realloc-from').value='';
+  document.getElementById('a-status').value='Not Started';
+  document.getElementById('a-expected').value='';
+  document.getElementById('a-by').value='';
+  document.getElementById('act-overlay').classList.add('open');
+}
+function closeActModal(){ document.getElementById('act-overlay').classList.remove('open'); activeKpiId=null; }
+document.getElementById('act-modal-close').addEventListener('click',closeActModal);
+document.getElementById('act-cancel').addEventListener('click',closeActModal);
+document.getElementById('act-overlay').addEventListener('click',e=>{ if(e.target===e.currentTarget) closeActModal(); });
+document.getElementById('btn-add-adhoc').addEventListener('click',()=>openAddAct(null,true,null));
+
+document.getElementById('act-save').addEventListener('click',async()=>{
+  const name=document.getElementById('a-name').value.trim();
+  const by=document.getElementById('a-by').value.trim();
+  const isAdhoc=document.getElementById('chk-adhoc').checked;
+  const kpiId=parseInt(document.getElementById('a-kpi').value)||null;
+  const reason=document.getElementById('a-reason').value.trim();
+  const reallocFrom=parseInt(document.getElementById('a-realloc-from').value)||null;
+  const reallocAmt=parseFloat(document.getElementById('a-realloc-amt').value)||0;
+  if(!name||!by){ alert('Activity name and your name are required.'); return; }
+  if(isAdhoc&&!reason){ alert('Please provide a reason for the ad hoc activity.'); return; }
+  if(isAdhoc&&!reallocFrom){ alert('Please select the source activity for budget reallocation.'); return; }
+  if(isAdhoc&&reallocAmt<=0){ alert('Please enter the reallocated amount.'); return; }
+  const btn=document.getElementById('act-save');
+  btn.textContent='Saving…'; btn.disabled=true;
+  try {
+    const divData=await api('GET',`/rest/v1/divisions?select=id&code=eq.${divCode}`);
+    const payload={
+      division_id:divData[0].id,
+      kpi_id:kpiId,
+      name,
+      target:document.getElementById('a-target').value.trim()||null,
+      budget_allocated:isAdhoc?reallocAmt:0,
+      expected_date:document.getElementById('a-expected').value||null,
+      status:document.getElementById('a-status').value,
+      fy:'2026-2027',
+      created_by:by,
+      is_adhoc:isAdhoc,
+      adhoc_reason:isAdhoc?reason:null,
+      realloc_from_id:isAdhoc?reallocFrom:null,
+      realloc_amount:isAdhoc?reallocAmt:0,
+    };
+    const created=await api('POST','/rest/v1/activities',payload);
+    const newId=created[0].id;
+    await api('POST','/rest/v1/audit_log',{
+      activity_id:newId,
+      field_changed:isAdhoc?'Ad hoc activity created':'Activity created',
+      old_value:null,
+      new_value:name+(isAdhoc?` (reallocated Nu. ${fmt(reallocAmt)} from activity #${reallocFrom})`:''),
+      updated_by:by,
+    });
+    closeActModal(); await load();
+  } catch(e){ alert('Save failed: '+e.message); }
+  finally{ btn.textContent='Save activity'; btn.disabled=false; }
+});
+
+load();
+</script>
+</body>
+</html>
