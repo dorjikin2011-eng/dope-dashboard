@@ -386,7 +386,13 @@ let divRow=null, kpis=[], activities=[], adhocActs=[], revisions=[];
 let editingKpiId=null, activeKpiId=null;
 let origKpiTarget='', origKpiBudget='';
 
-function fmt(n){ return Number(n||0).toLocaleString('en-IN'); }
+function fmt(n) { 
+  return Number(n || 0).toLocaleString('en-IN'); 
+}
+
+function fmtAmt(n) { 
+  return Number(n || 0).toFixed(3); 
+}
 function showErr(m){ const e=document.getElementById('err'); e.textContent=m; e.style.display=m?'block':'none'; }
 
 async function api(method,path,body){
@@ -446,9 +452,9 @@ function renderStrip(){
       <div class="divider"></div>
       <div class="m"><div class="l">Ad hoc activities</div><div class="v" style="color:var(--orange)">${d.total_adhoc||0}</div></div>
       <div class="divider"></div>
-      <div class="m"><div class="l">Budget (Nu.)</div><div class="v" style="color:var(--accent)">Nu. ${fmt(d.total_budget)}</div></div>
-      <div class="m"><div class="l">Actual (Nu.)</div><div class="v">Nu. ${fmt(d.total_actual)}</div></div>
-      <div class="m"><div class="l">Balance (Nu.)</div><div class="v ${bal<0?'over':''}">Nu. ${fmt(bal)}</div></div>
+      <div class="m"><div class="l">Budget (Nu.)</div><div class="v" style="color:var(--accent)">Nu. ${fmtAmt(d.total_budget)}</div></div>
+      <div class="m"><div class="l">Actual (Nu.)</div><div class="v">Nu. ${fmtAmt(d.total_actual)}</div></div>
+      <div class="m"><div class="l">Balance (Nu.)</div><div class="v ${bal<0?'over':''}">Nu. ${fmtAmt(bal)}</div></div>
     </div>
     <div class="bar-wrap">
       <div class="bar-label"><span>Budget utilisation</span><span>${pct}%</span></div>
@@ -493,9 +499,9 @@ function renderKPIs(){
           </div>
         </div>
         <div class="kpi-right">
-          <div class="kpi-budget">Nu. ${fmt(k.budget_allocated)}</div>
-          <div class="kpi-budget-sub">Actual: Nu. ${fmt(k.total_actual)}<br>
-            Balance: <span class="${bal<0?'over':''}">Nu. ${fmt(bal)}</span></div>
+          <div class="kpi-budget">Nu. ${fmtAmt(k.budget_allocated)}</div>
+          <div class="kpi-budget-sub">Actual: Nu. ${fmtAmt(k.total_actual)}<br>
+            Balance: <span class="${bal<0?'over':''}">Nu. ${fmtAmt(bal)}</span></div>
           <div class="kpi-progress">
             <div style="font-size:11px;color:var(--text-muted);text-align:right">${pct}% used</div>
             <div class="bar-track">
@@ -544,8 +550,8 @@ function renderKPIs(){
               <td style="font-size:12px;color:var(--text-muted)">${a.target||'—'}</td>
               <td>${a.session_count||0}</td>
               <td><span class="badge ${a.status}">${a.status}</span></td>
-              <td class="amount">Nu. ${fmt(ab)}</td>
-              <td class="amount">Nu. ${fmt(aa)}</td>
+              <td class="amount">Nu. ${fmtAmt(ab)}</td>
+              <td class="amount">Nu. ${fmtAmt(aa)}</td>
               <td class="amount ${abal<0?'over':''}">Nu. ${fmt(abal)}</td>
             </tr>`;
           }).join('')
@@ -575,8 +581,8 @@ function renderAdhocSection(){
             <div class="s"><div class="l">Total ad hoc</div><div class="v">${adhocActs.length}</div></div>
             <div class="s"><div class="l">Standalone (no KPI)</div><div class="v">${standalone.length}</div></div>
             <div class="s"><div class="l">Under a KPI</div><div class="v">${adhocActs.length-standalone.length}</div></div>
-            <div class="s"><div class="l">Total actual (Nu.)</div><div class="v">Nu. ${fmt(totExp)}</div></div>
-            <div class="s"><div class="l">Total reallocated (Nu.)</div><div class="v">Nu. ${fmt(totRealloc)}</div></div>
+            <div class="s"><div class="l">Total actual (Nu.)</div><div class="v">Nu. ${fmtAmt(totExp)}</div></div>
+            <div class="s"><div class="l">Total reallocated (Nu.)</div><div class="v">Nu. ${fmtAmt(totRealloc)}</div></div>
             <div class="s"><div class="l">Total participants</div><div class="v">${fmt(totP)}</div></div>
           </div>
         </div>
@@ -598,8 +604,8 @@ function renderAdhocSection(){
             <td>${a.session_count||0}</td>
             <td><span class="badge ${a.status}">${a.status}</span></td>
             <td style="font-size:12px">${a.realloc_from_name||'—'}</td>
-            <td class="amount">Nu. ${fmt(a.realloc_amount)}</td>
-            <td class="amount">Nu. ${fmt(a.total_actual)}</td>
+            <td class="amount">Nu. ${fmtAmt(a.realloc_amount)}</td>
+            <td class="amount">Nu. ${fmtAmt(a.total_actual)}</td>
             <td>${fmt(a.total_participants)}</td>
           </tr>`).join('')}
         </tbody>
@@ -806,7 +812,7 @@ document.getElementById('act-save').addEventListener('click',async()=>{
       activity_id:newId,
       field_changed:isAdhoc?'Ad hoc activity created':'Activity created',
       old_value:null,
-      new_value:name+(isAdhoc?` (reallocated Nu. ${fmt(reallocAmt)} from activity #${reallocFrom})`:''),
+      new_value:name+(isAdhoc?` (reallocated Nu. ${fmtAmt(reallocAmt)} from activity #${reallocFrom})`:''),
       updated_by:by,
     });
     closeActModal(); await load();
