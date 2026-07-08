@@ -333,7 +333,7 @@ let sessions = [];
 let editingSessionId = null;
 
 // ── HELPERS ──
-function fmt(n){ return Number(n||0).toLocaleString('en-IN'); }
+function fmt(n){ return Number(n || 0).toFixed(3); }
 function fmtDate(d){ if(!d) return '—'; const dt=new Date(d); return dt.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}); }
 function fmtTs(ts){ if(!ts) return '—'; const d=new Date(ts); return d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})+' '+d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}); }
 function showSessErr(m){ const e=document.getElementById('sess-err'); e.textContent=m; e.style.display=m?'block':'none'; }
