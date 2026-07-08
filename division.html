@@ -21,6 +21,7 @@
   }
   *{box-sizing:border-box;margin:0;padding:0;}
   body{font-family:system-ui,sans-serif;background:var(--bg);color:var(--text);font-size:15px;}
+
   nav{background:var(--purple);color:#fff;padding:0 24px;height:52px;
     display:flex;align-items:center;justify-content:space-between;
     position:sticky;top:0;z-index:100;}
@@ -30,10 +31,13 @@
   nav a{color:rgba(255,255,255,.85);text-decoration:none;padding:6px 14px;
     border-radius:6px;font-size:13px;transition:background .15s;}
   nav a:hover{background:rgba(255,255,255,.18);color:#fff;}
+
   .page{max-width:1100px;margin:0 auto;padding:24px 20px 60px;}
   .breadcrumb{font-size:13px;color:var(--text-muted);margin-bottom:18px;}
   .breadcrumb a{color:var(--purple);text-decoration:none;}
   .breadcrumb a:hover{text-decoration:underline;}
+
+  /* DIVISION HEADER */
   .div-strip{background:var(--card);border:0.5px solid var(--border);
     border-radius:var(--radius);padding:18px 22px;margin-bottom:20px;
     border-left:4px solid var(--accent,var(--blue));}
@@ -53,16 +57,20 @@
     color:var(--text-muted);margin-bottom:5px;}
   .bar-track{background:var(--gray-light);border-radius:6px;height:8px;overflow:hidden;}
   .bar-fill{height:100%;border-radius:6px;background:var(--teal);transition:width .5s;}
+
+  /* BADGES */
   .badge{display:inline-block;font-size:11px;padding:3px 10px;
     border-radius:20px;font-weight:500;white-space:nowrap;}
-  .badge.Completed  {background:var(--green-light);color:var(--green);}
-  .badge.Ongoing    {background:var(--amber-light); color:var(--amber);}
-  .badge.Delayed    {background:var(--red-light);   color:var(--red);}
-  .badge.Not\ Started{background:var(--gray-light); color:var(--gray);}
-  .badge.adhoc      {background:var(--orange-light);color:var(--orange);font-weight:700;}
+  .badge.Completed  {background:var(--green-light); color:var(--green);}
+  .badge.Ongoing    {background:var(--amber-light);  color:var(--amber);}
+  .badge.Delayed    {background:var(--red-light);    color:var(--red);}
+  .badge.Not\ Started{background:var(--gray-light);  color:var(--gray);}
+  .badge.adhoc      {background:var(--orange-light); color:var(--orange); font-weight:700;}
   .revised-badge{display:inline-block;font-size:10px;padding:2px 7px;
     border-radius:20px;background:var(--purple-light);color:var(--purple);
     font-weight:600;margin-left:6px;vertical-align:middle;cursor:help;}
+
+  /* BUTTONS */
   .toolbar{display:flex;justify-content:space-between;align-items:center;
     margin-bottom:14px;flex-wrap:wrap;gap:8px;}
   .toolbar h2{font-size:16px;font-weight:600;margin:0;}
@@ -75,6 +83,8 @@
   .btn-orange{background:var(--orange);color:#fff;}
   .btn-outline{background:#fff;color:var(--text);border:1px solid var(--border);}
   .btn-sm{padding:5px 11px;font-size:12px;}
+
+  /* KPI CARDS */
   .kpi-list{display:flex;flex-direction:column;gap:14px;margin-bottom:28px;}
   .kpi-card{background:var(--card);border:0.5px solid var(--border);
     border-radius:var(--radius);overflow:hidden;}
@@ -96,6 +106,8 @@
   .kpi-card.open .chevron{transform:rotate(90deg);}
   .kpi-actions{display:flex;gap:6px;padding:0 20px 12px;
     border-left:4px solid var(--accent,var(--blue));background:var(--card);}
+
+  /* REVISION LIST */
   .revision-list{padding:12px 20px;border-top:0.5px solid var(--border);
     background:#fafaf8;display:none;}
   .revision-list.open{display:block;}
@@ -105,6 +117,8 @@
   .rev-entry .rw{font-weight:600;color:var(--purple);}
   .rev-entry .ro{text-decoration:line-through;color:var(--red);}
   .rev-entry .rn{color:var(--green);font-weight:600;}
+
+  /* ACTIVITY TABLE */
   .kpi-body{display:none;border-top:0.5px solid var(--border);}
   .kpi-card.open .kpi-body{display:block;}
   .act-toolbar{display:flex;justify-content:space-between;align-items:center;
@@ -122,6 +136,8 @@
   .empty{text-align:center;padding:24px;color:var(--text-muted);font-size:13px;}
   .amount{font-variant-numeric:tabular-nums;white-space:nowrap;}
   .over{color:var(--red);font-weight:600;}
+
+  /* AD HOC SECTION */
   .adhoc-section{background:var(--card);border:0.5px solid var(--orange);
     border-radius:var(--radius);overflow:hidden;margin-bottom:14px;}
   .adhoc-header{background:var(--orange-light);padding:14px 20px;
@@ -133,9 +149,13 @@
   .adhoc-stats{display:flex;gap:16px;flex-wrap:wrap;margin-top:6px;}
   .adhoc-stats .s .l{font-size:11px;color:var(--text-muted);}
   .adhoc-stats .s .v{font-size:14px;font-weight:700;color:var(--orange);}
+
+  /* LOADING / ERROR */
   .loading{text-align:center;padding:32px;color:var(--text-muted);}
   .err-box{background:var(--red-light);color:var(--red);border-radius:8px;
     padding:12px 16px;font-size:13px;margin-bottom:14px;}
+
+  /* MODAL */
   .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);
     z-index:200;align-items:center;justify-content:center;padding:16px;}
   .overlay.open{display:flex;}
@@ -157,6 +177,8 @@
   textarea{resize:vertical;min-height:56px;}
   .required{color:var(--red);}
   .form-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:20px;}
+
+  /* AD HOC TOGGLE */
   .adhoc-toggle-wrap{grid-column:1/-1;display:flex;align-items:center;gap:10px;
     background:var(--orange-light);border-radius:8px;padding:10px 14px;
     border:1px solid var(--orange);cursor:pointer;}
@@ -169,11 +191,16 @@
   .adhoc-fields.show{display:grid;grid-template-columns:1fr 1fr;}
   .adhoc-fields .full{grid-column:1/-1;}
   .adhoc-fields label{color:var(--orange);}
-  .adhoc-fields input,.adhoc-fields select,.adhoc-fields textarea{border-color:rgba(194,90,0,.3);}
-  .adhoc-fields input:focus,.adhoc-fields select:focus{border-color:var(--orange);box-shadow:0 0 0 3px var(--orange-light);}
+  .adhoc-fields input,.adhoc-fields select,.adhoc-fields textarea{
+    border-color:rgba(194,90,0,.3);}
+  .adhoc-fields input:focus,.adhoc-fields select:focus{
+    border-color:var(--orange);box-shadow:0 0 0 3px var(--orange-light);}
   .kpi-optional-note{font-size:11px;color:var(--orange);margin-top:3px;}
+
+  /* REVISION WARNING */
   .revision-note{background:var(--amber-light);border-radius:7px;padding:10px 14px;
     font-size:12px;color:var(--amber);margin-top:10px;display:none;}
+
   @media(max-width:660px){
     .form-grid{grid-template-columns:1fr;}
     .form-grid .full,.adhoc-fields{grid-column:1;}
@@ -197,7 +224,13 @@
   <div class="breadcrumb">
     <a href="index.html">Home</a> › <span id="bc-div">Division</span>
   </div>
-  <div class="div-strip" id="div-strip"><div class="loading">Loading…</div></div>
+
+  <!-- DIVISION STRIP -->
+  <div class="div-strip" id="div-strip">
+    <div class="loading">Loading…</div>
+  </div>
+
+  <!-- KPI + PLANNED ACTIVITIES -->
   <div class="toolbar">
     <h2>KPIs &amp; Planned Activities</h2>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
@@ -206,11 +239,15 @@
     </div>
   </div>
   <div class="err-box" id="err" style="display:none"></div>
-  <div class="kpi-list" id="kpi-list"><div class="loading">Loading…</div></div>
+  <div class="kpi-list" id="kpi-list">
+    <div class="loading">Loading…</div>
+  </div>
+
+  <!-- AD HOC SECTION -->
   <div id="adhoc-section-wrap"></div>
 </div>
 
-<!-- KPI MODAL -->
+<!-- ── KPI MODAL ── -->
 <div class="overlay" id="kpi-overlay">
   <div class="modal">
     <button class="modal-close" id="kpi-modal-close">✕</button>
@@ -250,18 +287,20 @@
     </div>
     <div class="form-actions">
       <button class="btn btn-outline" id="kpi-cancel">Cancel</button>
-      <button class="btn btn-purple" id="kpi-save">Save KPI</button>
+      <button class="btn btn-purple"  id="kpi-save">Save KPI</button>
     </div>
   </div>
 </div>
 
-<!-- ACTIVITY MODAL -->
+<!-- ── ACTIVITY MODAL (planned + ad hoc) ── -->
 <div class="overlay" id="act-overlay">
   <div class="modal">
     <button class="modal-close" id="act-modal-close">✕</button>
     <h3 id="act-modal-title">Add activity</h3>
     <div class="modal-sub" id="act-modal-sub"></div>
     <div class="form-grid">
+
+      <!-- AD HOC TOGGLE -->
       <label class="adhoc-toggle-wrap" id="adhoc-toggle-wrap">
         <input type="checkbox" id="chk-adhoc"/>
         <div>
@@ -269,6 +308,7 @@
           <div class="ts">Toggle on if this activity was not part of the original APT</div>
         </div>
       </label>
+
       <div class="full">
         <label>Activity name <span class="required">*</span></label>
         <input id="a-name" type="text" placeholder="e.g. Ad hoc workshop — Ministry request"/>
@@ -278,8 +318,10 @@
         <input id="a-target" type="text" placeholder="e.g. Sensitise 50 staff on asset declaration"/>
       </div>
       <div>
-        <label>Under KPI</label>
-        <select id="a-kpi"><option value="">— Standalone (no KPI) —</option></select>
+        <label id="a-kpi-label">Under KPI</label>
+        <select id="a-kpi">
+          <option value="">— Standalone (no KPI) —</option>
+        </select>
         <div class="kpi-optional-note" id="kpi-optional-note" style="display:none">
           Optional for ad hoc — select if this contributes to a KPI target
         </div>
@@ -299,14 +341,18 @@
         <label>Created by <span class="required">*</span></label>
         <input id="a-by" type="text" placeholder="Your name"/>
       </div>
+
+      <!-- AD HOC EXTRA FIELDS (shown when toggle is on) -->
       <div class="adhoc-fields" id="adhoc-fields">
         <div class="full">
           <label>Reason / background <span class="required">*</span></label>
-          <textarea id="a-reason" placeholder="e.g. Assigned by Ministry of Finance on short notice…"></textarea>
+          <textarea id="a-reason" placeholder="e.g. Assigned by Ministry of Finance on short notice for staff sensitisation programme…"></textarea>
         </div>
         <div>
           <label>Budget reallocated from <span class="required">*</span></label>
-          <select id="a-realloc-from"><option value="">— Select source activity —</option></select>
+          <select id="a-realloc-from">
+            <option value="">— Select source activity —</option>
+          </select>
         </div>
         <div>
           <label>Amount reallocated (Nu.) <span class="required">*</span></label>
@@ -315,11 +361,12 @@
         <div class="full" id="realloc-balance-wrap" style="display:none">
           <div style="font-size:12px;color:var(--text-muted);background:#fff;
             border-radius:6px;padding:8px 10px;border:1px solid var(--border)">
-            Remaining balance after reallocation:
+            Source activity remaining balance after reallocation:
             <strong id="realloc-balance" style="color:var(--teal)">Nu. —</strong>
           </div>
         </div>
       </div>
+
     </div>
     <div class="form-actions">
       <button class="btn btn-outline" id="act-cancel">Cancel</button>
@@ -331,9 +378,6 @@
 <script>
 const SUPA_URL = 'https://fiozcsxlnpvphrxwvzzy.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZpb3pjc3hsbnB2cGhyeHd2enp5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwNzkxNTYsImV4cCI6MjA5NjY1NTE1Nn0.1XZn61C23mE5LkltAC1VU57-iWySlJsy1_9-ZRAW1I8';
-
-// ── FIXED: hardcoded division ID lookup — no extra fetch needed ──
-const DIV_IDS = { ADMD: 1, EAD: 2, ED: 3, PD: 4 };
 
 const DIV_COLORS = {
   ADMD:{accent:'#378ADD',light:'#E6F1FB'},
@@ -365,9 +409,9 @@ async function api(method,path,body){
   return txt?JSON.parse(txt):null;
 }
 
+// ── LOAD ──
 async function load(){
   if(!divCode){ document.getElementById('div-strip').innerHTML='<div class="err-box">No division specified.</div>'; return; }
-  if(!DIV_IDS[divCode]){ document.getElementById('div-strip').innerHTML=`<div class="err-box">Unknown division: ${divCode}</div>`; return; }
   try {
     const [divRows,kpiRows,actRows,adhocRows,revRows] = await Promise.all([
       api('GET',`/rest/v1/v_division_summary?select=*&code=eq.${divCode}`),
@@ -378,10 +422,13 @@ async function load(){
     ]);
     divRow=divRows[0]; kpis=kpiRows||[]; activities=actRows||[];
     adhocActs=adhocRows||[]; revisions=revRows||[];
-    renderStrip(); renderKPIs(); renderAdhocSection();
+    renderStrip();
+    renderKPIs();
+    renderAdhocSection();
   } catch(e){ showErr('Error loading: '+e.message); }
 }
 
+// ── DIVISION STRIP ──
 function renderStrip(){
   const d=divRow; if(!d) return;
   const c=DIV_COLORS[d.code]||{accent:'#378ADD'};
@@ -390,11 +437,13 @@ function renderStrip(){
   document.getElementById('bc-div').textContent=d.code;
   document.getElementById('div-strip').style.setProperty('--accent',c.accent);
   document.getElementById('div-strip').innerHTML=`
-    <div class="top"><div>
-      <div class="code">${d.code}</div>
-      <div class="full-name">${d.name}</div>
-      ${d.head_name?`<div class="head">Head: ${d.head_name}</div>`:''}
-    </div></div>
+    <div class="top">
+      <div>
+        <div class="code">${d.code}</div>
+        <div class="full-name">${d.name}</div>
+        ${d.head_name?`<div class="head">Head: ${d.head_name}</div>`:''}
+      </div>
+    </div>
     <div class="metric-row">
       <div class="m"><div class="l">KPIs</div><div class="v" style="color:var(--purple)">${d.total_kpis||0}</div></div>
       <div class="m"><div class="l">Planned activities</div><div class="v" style="color:var(--teal)">${d.total_activities}</div></div>
@@ -402,7 +451,7 @@ function renderStrip(){
       <div class="m"><div class="l">Ongoing</div><div class="v" style="color:var(--amber)">${d.ongoing}</div></div>
       <div class="m"><div class="l">Delayed</div><div class="v" style="color:var(--red)">${d.delayed}</div></div>
       <div class="divider"></div>
-      <div class="m"><div class="l">Ad hoc</div><div class="v" style="color:var(--orange)">${d.total_adhoc||0}</div></div>
+      <div class="m"><div class="l">Ad hoc activities</div><div class="v" style="color:var(--orange)">${d.total_adhoc||0}</div></div>
       <div class="divider"></div>
       <div class="m"><div class="l">Budget (Nu.)</div><div class="v" style="color:var(--accent)">Nu. ${fmt(d.total_budget)}</div></div>
       <div class="m"><div class="l">Actual (Nu.)</div><div class="v">Nu. ${fmt(d.total_actual)}</div></div>
@@ -414,6 +463,7 @@ function renderStrip(){
     </div>`;
 }
 
+// ── KPI LIST ──
 function renderKPIs(){
   const el=document.getElementById('kpi-list');
   if(!kpis.length){
@@ -435,7 +485,9 @@ function renderKPIs(){
     <div class="kpi-card" id="kpi-${k.id}" style="--accent:${c.accent}">
       <div class="kpi-card-header" onclick="toggleKPI(${k.id})">
         <div class="kpi-left">
-          <div class="kpi-name">${k.kpi_name}${isRevised?`<span class="revised-badge">Revised</span>`:''}</div>
+          <div class="kpi-name">${k.kpi_name}
+            ${isRevised?`<span class="revised-badge">Revised</span>`:''}
+          </div>
           <div class="kpi-meta"><span class="tl">Target: </span>${k.target}
             ${k.original_target&&k.original_target!==k.target
               ?`<br><span style="color:var(--red);font-size:11px">Original: ${k.original_target}</span>`:''}
@@ -453,16 +505,20 @@ function renderKPIs(){
             Balance: <span class="${bal<0?'over':''}">Nu. ${fmt(bal)}</span></div>
           <div class="kpi-progress">
             <div style="font-size:11px;color:var(--text-muted);text-align:right">${pct}% used</div>
-            <div class="bar-track"><div class="bar-fill" style="width:${Math.min(pct,100)}%;background:${pct>100?'var(--red)':c.accent}"></div></div>
+            <div class="bar-track">
+              <div class="bar-fill" style="width:${Math.min(pct,100)}%;background:${pct>100?'var(--red)':c.accent}"></div>
+            </div>
           </div>
         </div>
         <div class="chevron">›</div>
       </div>
+
       <div class="kpi-actions" style="--accent:${c.accent}">
         <button class="btn btn-sm btn-outline" onclick="openEditKPI(${k.id},event)">✎ Edit KPI</button>
         <button class="btn btn-sm btn-orange"  onclick="openAddAct(${k.id},true,event)">⚡ Add ad hoc</button>
         ${kRevs.length?`<button class="btn btn-sm btn-outline" onclick="toggleRevisions(${k.id},event)">🕑 ${kRevs.length} revision${kRevs.length>1?'s':''}</button>`:''}
       </div>
+
       <div class="revision-list" id="rev-${k.id}">
         <h4>Revision history</h4>
         ${kRevs.map(r=>`<div class="rev-entry">
@@ -472,6 +528,7 @@ function renderKPIs(){
           ${r.revision_reason?`<br><span style="color:var(--text-muted)">Reason: ${r.revision_reason}</span>`:''}
         </div>`).join('')}
       </div>
+
       <div class="kpi-body" id="body-${k.id}">
         <div class="act-toolbar">
           <span>Activities under this KPI</span>
@@ -484,8 +541,8 @@ function renderKPIs(){
             <th>Budget (Nu.)</th><th>Actual (Nu.)</th><th>Balance</th>
           </tr></thead>
           <tbody>
-          ${allActs.length?allActs.map((a,i)=>{
-            const ab=+a.budget_allocated||0,aa=+a.total_actual||0,abal=ab-aa;
+          ${allActs.length ? allActs.map((a,i)=>{
+            const ab=+a.budget_allocated||0, aa=+a.total_actual||0, abal=ab-aa;
             const isAh=!!a.is_adhoc;
             return `<tr class="${isAh?'adhoc-row':'act-row'}" onclick="location.href='activity.html?id=${a.id}'">
               <td>${i+1}</td>
@@ -498,7 +555,8 @@ function renderKPIs(){
               <td class="amount">Nu. ${fmt(aa)}</td>
               <td class="amount ${abal<0?'over':''}">Nu. ${fmt(abal)}</td>
             </tr>`;
-          }).join(''):`<tr><td colspan="9" class="empty">No activities under this KPI yet.</td></tr>`}
+          }).join('')
+          :`<tr><td colspan="9" class="empty">No activities under this KPI yet.</td></tr>`}
           </tbody>
         </table></div>
       </div>
@@ -506,12 +564,14 @@ function renderKPIs(){
   }).join('');
 }
 
+// ── AD HOC SECTION (standalone — no KPI) ──
 function renderAdhocSection(){
   const standalone=adhocActs.filter(a=>!a.kpi_id);
   const wrap=document.getElementById('adhoc-section-wrap');
   const totExp=adhocActs.reduce((s,a)=>s+ +a.total_actual,0);
   const totP=adhocActs.reduce((s,a)=>s+ +a.total_participants,0);
   const totRealloc=adhocActs.reduce((s,a)=>s+ +a.realloc_amount,0);
+
   wrap.innerHTML=`
     <div class="adhoc-section">
       <div class="adhoc-header">
@@ -556,10 +616,16 @@ function renderAdhocSection(){
     </div>`;
 }
 
-function toggleKPI(id){ document.getElementById('kpi-'+id).classList.toggle('open'); }
-function toggleRevisions(id,e){ e.stopPropagation(); document.getElementById('rev-'+id).classList.toggle('open'); }
+// ── TOGGLE KPI ──
+function toggleKPI(id){
+  document.getElementById('kpi-'+id).classList.toggle('open');
+}
+function toggleRevisions(id,e){
+  e.stopPropagation();
+  document.getElementById('rev-'+id).classList.toggle('open');
+}
 
-// KPI MODAL
+// ── KPI MODAL ──
 function openAddKPI(){
   editingKpiId=null; origKpiTarget=''; origKpiBudget='';
   document.getElementById('kpi-modal-title').textContent='Add KPI';
@@ -570,7 +636,8 @@ function openAddKPI(){
   document.getElementById('kpi-overlay').classList.add('open');
 }
 function openEditKPI(id,e){
-  e.stopPropagation(); editingKpiId=id;
+  e.stopPropagation();
+  editingKpiId=id;
   const k=kpis.find(x=>x.id===id);
   origKpiTarget=k.target; origKpiBudget=String(k.budget_allocated);
   document.getElementById('kpi-modal-title').textContent='Edit KPI';
@@ -620,32 +687,29 @@ document.getElementById('kpi-save').addEventListener('click',async()=>{
       if(tc) await api('POST','/rest/v1/kpi_revisions',{kpi_id:editingKpiId,field_changed:'Target',old_value:origKpiTarget,new_value:target,revised_by:by,revision_reason:reason});
       if(bc) await api('POST','/rest/v1/kpi_revisions',{kpi_id:editingKpiId,field_changed:'Budget',old_value:origKpiBudget,new_value:budget,revised_by:by,revision_reason:reason});
     } else {
-      // FIXED: use hardcoded division ID — no fetch needed
-      const divisionId = DIV_IDS[divCode];
-      if(!divisionId) throw new Error('Unknown division: '+divCode);
-      await api('POST','/rest/v1/kpis',{
-        division_id:divisionId,
-        kpi_name:name,target,
-        budget_allocated:parseFloat(budget),
-        status,fy:'2026-2027',created_by:by
-      });
+      const divData=await api('GET',`/rest/v1/divisions?select=id&code=eq.${divCode}`);
+      await api('POST','/rest/v1/kpis',{division_id:divData[0].id,kpi_name:name,target,budget_allocated:parseFloat(budget),status,fy:'2026-2027',created_by:by});
     }
     closeKPIModal(); await load();
   } catch(e){ alert('Save failed: '+e.message); }
   finally{ btn.textContent='Save KPI'; btn.disabled=false; }
 });
 
-// ACTIVITY MODAL
+// ── ACTIVITY MODAL ──
 function populateKpiSelect(preselect){
   const sel=document.getElementById('a-kpi');
   sel.innerHTML='<option value="">— Standalone (no KPI) —</option>';
   kpis.forEach(k=>{ const o=document.createElement('option'); o.value=k.id; o.textContent=k.kpi_name; if(k.id===preselect) o.selected=true; sel.appendChild(o); });
 }
+
 function populateReallocSelect(){
   const sel=document.getElementById('a-realloc-from');
   sel.innerHTML='<option value="">— Select source activity —</option>';
+  // All planned activities in this division as potential sources
   activities.forEach(a=>{ const o=document.createElement('option'); o.value=a.id; o.textContent=`${a.name} (Nu. ${fmt(+a.budget_allocated - +a.total_actual)} remaining)`; sel.appendChild(o); });
 }
+
+// Show remaining balance when source is selected
 document.getElementById('a-realloc-from').addEventListener('change',()=>{
   const id=parseInt(document.getElementById('a-realloc-from').value);
   const amt=parseFloat(document.getElementById('a-realloc-amt').value)||0;
@@ -653,7 +717,7 @@ document.getElementById('a-realloc-from').addEventListener('change',()=>{
   if(!id){ wrap.style.display='none'; return; }
   const src=activities.find(a=>a.id===id);
   if(!src){ wrap.style.display='none'; return; }
-  const remaining=(+src.budget_allocated - +src.total_actual)-amt;
+  const remaining=(+src.budget_allocated - +src.total_actual) - amt;
   document.getElementById('realloc-balance').textContent='Nu. '+fmt(remaining);
   document.getElementById('realloc-balance').style.color=remaining<0?'var(--red)':'var(--teal)';
   wrap.style.display='block';
@@ -661,6 +725,8 @@ document.getElementById('a-realloc-from').addEventListener('change',()=>{
 document.getElementById('a-realloc-amt').addEventListener('input',()=>{
   document.getElementById('a-realloc-from').dispatchEvent(new Event('change'));
 });
+
+// Ad hoc toggle behaviour
 document.getElementById('chk-adhoc').addEventListener('change',()=>{
   const on=document.getElementById('chk-adhoc').checked;
   document.getElementById('adhoc-fields').classList.toggle('show',on);
@@ -670,11 +736,13 @@ document.getElementById('chk-adhoc').addEventListener('change',()=>{
     ?'⚡ Ad hoc — unplanned activity assigned during FY 2026–2027'
     :'Planned activity under a KPI';
 });
-function openAddAct(kpiId,forceAdhoc,e){
+
+function openAddAct(kpiId, forceAdhoc, e){
   if(e) e.stopPropagation();
   activeKpiId=kpiId||null;
-  populateKpiSelect(kpiId); populateReallocSelect();
-  document.getElementById('act-modal-title').textContent=forceAdhoc?'Add ad hoc activity':'Add activity';
+  populateKpiSelect(kpiId);
+  populateReallocSelect();
+  document.getElementById('act-modal-title').textContent= forceAdhoc?'Add ad hoc activity':'Add activity';
   document.getElementById('chk-adhoc').checked=!!forceAdhoc;
   document.getElementById('adhoc-fields').classList.toggle('show',!!forceAdhoc);
   document.getElementById('kpi-optional-note').style.display=forceAdhoc?'block':'none';
@@ -711,11 +779,9 @@ document.getElementById('act-save').addEventListener('click',async()=>{
   const btn=document.getElementById('act-save');
   btn.textContent='Saving…'; btn.disabled=true;
   try {
-    // FIXED: use hardcoded division ID — no fetch needed
-    const divisionId = DIV_IDS[divCode];
-    if(!divisionId) throw new Error('Unknown division: '+divCode);
+    const divData=await api('GET',`/rest/v1/divisions?select=id&code=eq.${divCode}`);
     const payload={
-      division_id:divisionId,
+      division_id:divData[0].id,
       kpi_id:kpiId,
       name,
       target:document.getElementById('a-target').value.trim()||null,
