@@ -225,12 +225,10 @@
     <a href="index.html">Home</a> › <span id="bc-div">Division</span>
   </div>
 
-  <!-- DIVISION STRIP -->
   <div class="div-strip" id="div-strip">
     <div class="loading">Loading…</div>
   </div>
 
-  <!-- KPI + PLANNED ACTIVITIES -->
   <div class="toolbar">
     <h2>KPIs &amp; Planned Activities</h2>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
@@ -243,11 +241,9 @@
     <div class="loading">Loading…</div>
   </div>
 
-  <!-- AD HOC SECTION -->
   <div id="adhoc-section-wrap"></div>
 </div>
 
-<!-- ── KPI MODAL ── -->
 <div class="overlay" id="kpi-overlay">
   <div class="modal">
     <button class="modal-close" id="kpi-modal-close">✕</button>
@@ -292,7 +288,6 @@
   </div>
 </div>
 
-<!-- ── ACTIVITY MODAL (planned + ad hoc) ── -->
 <div class="overlay" id="act-overlay">
   <div class="modal">
     <button class="modal-close" id="act-modal-close">✕</button>
@@ -300,7 +295,6 @@
     <div class="modal-sub" id="act-modal-sub"></div>
     <div class="form-grid">
 
-      <!-- AD HOC TOGGLE -->
       <label class="adhoc-toggle-wrap" id="adhoc-toggle-wrap">
         <input type="checkbox" id="chk-adhoc"/>
         <div>
@@ -342,7 +336,6 @@
         <input id="a-by" type="text" placeholder="Your name"/>
       </div>
 
-      <!-- AD HOC EXTRA FIELDS (shown when toggle is on) -->
       <div class="adhoc-fields" id="adhoc-fields">
         <div class="full">
           <label>Reason / background <span class="required">*</span></label>
@@ -688,7 +681,13 @@ document.getElementById('kpi-save').addEventListener('click',async()=>{
       if(bc) await api('POST','/rest/v1/kpi_revisions',{kpi_id:editingKpiId,field_changed:'Budget',old_value:origKpiBudget,new_value:budget,revised_by:by,revision_reason:reason});
     } else {
       const divData=await api('GET',`/rest/v1/divisions?select=id&code=eq.${divCode}`);
-      await api('POST','/rest/v1/kpis',{division_id:divData[0].id,kpi_name:name,target,budget_allocated:parseFloat(budget),status,fy:'2026-2027',created_by:by});
+      if (!divData || divData.length === 0) {
+        throw new Error(`Division code "${divCode}" was not found in the divisions table.`);
+      }
+      const createdKpi = await api('POST','/rest/v1/kpis',{division_id:divData[0].id,kpi_name:name,target,budget_allocated:parseFloat(budget),status,fy:'2026-2027',created_by:by});
+      if (!createdKpi || createdKpi.length === 0) {
+        throw new Error("KPI saved successfully, but Supabase returned an empty response. Verify that your row level security (RLS) policies permit SELECT commands for this role.");
+      }
     }
     closeKPIModal(); await load();
   } catch(e){ alert('Save failed: '+e.message); }
@@ -780,6 +779,9 @@ document.getElementById('act-save').addEventListener('click',async()=>{
   btn.textContent='Saving…'; btn.disabled=true;
   try {
     const divData=await api('GET',`/rest/v1/divisions?select=id&code=eq.${divCode}`);
+    if (!divData || divData.length === 0) {
+      throw new Error(`Division code "${divCode}" was not found in the divisions table.`);
+    }
     const payload={
       division_id:divData[0].id,
       kpi_id:kpiId,
@@ -796,6 +798,9 @@ document.getElementById('act-save').addEventListener('click',async()=>{
       realloc_amount:isAdhoc?reallocAmt:0,
     };
     const created=await api('POST','/rest/v1/activities',payload);
+    if (!created || created.length === 0) {
+      throw new Error("Activity saved successfully, but Supabase returned an empty response. Verify that your row level security (RLS) policies permit SELECT commands for this role.");
+    }
     const newId=created[0].id;
     await api('POST','/rest/v1/audit_log',{
       activity_id:newId,
