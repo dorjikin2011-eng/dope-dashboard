@@ -392,6 +392,7 @@ let allDivisions=[], allKpis=[], allActivities=[], allAdhoc=[], allSessions=[], 
 const charts={};
 
 function fmt(n){ return Number(n||0).toLocaleString('en-IN'); }
+function fmtAmt(n){ return Number(n||0).toFixed(3); }
 function fmtDate(d){ if(!d) return '—'; return new Date(d).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}); }
 function showErr(m){ const e=document.getElementById('err'); e.textContent=m; e.style.display=m?'block':'none'; }
 
@@ -469,9 +470,9 @@ function renderAPT(kpis,sess){
   const adhocUnderKpi=allAdhoc.filter(a=>a.kpi_id);
   document.getElementById('apt-kpis').innerHTML=`
     <div class="kbox" style="--accent:var(--purple)"><div class="l">Total KPIs</div><div class="v">${kpis.length}</div></div>
-    <div class="kbox" style="--accent:var(--blue)"><div class="l">Budget (Nu.)</div><div class="v" style="font-size:15px">Nu. ${fmt(totBud)}</div></div>
-    <div class="kbox" style="--accent:var(--teal)"><div class="l">Actual (Nu.)</div><div class="v" style="font-size:15px">Nu. ${fmt(totAct)}</div><div class="sub">${pct}% utilised</div></div>
-    <div class="kbox" style="--accent:${bal<0?'var(--red)':'var(--gray)'}"><div class="l">Balance (Nu.)</div><div class="v" style="font-size:15px;color:${bal<0?'var(--red)':'inherit'}">Nu. ${fmt(bal)}</div></div>
+    <div class="kbox" style="--accent:var(--blue)"><div class="l">Budget (Nu.)</div><div class="v" style="font-size:15px">Nu. ${fmtAmt(totBud)}</div></div>
+    <div class="kbox" style="--accent:var(--teal)"><div class="l">Actual (Nu.)</div><div class="v" style="font-size:15px">Nu. ${fmtAmt(totAct)}</div><div class="sub">${pct}% utilised</div></div>
+    <div class="kbox" style="--accent:${bal<0?'var(--red)':'var(--gray)'}"><div class="l">Balance (Nu.)</div><div class="v" style="font-size:15px;color:${bal<0?'var(--red)':'inherit'}">Nu. ${fmtAmt(bal)}</div></div>
     <div class="kbox" style="--accent:var(--green)"><div class="l">KPIs completed</div><div class="v">${kpis.filter(k=>k.status==='Completed').length} / ${kpis.length}</div></div>
     <div class="kbox adhoc"><div class="l">Ad hoc under KPIs</div><div class="v">${adhocUnderKpi.length}</div><div class="sub">Linked to a KPI</div></div>`;
 
@@ -495,8 +496,8 @@ function renderAPT(kpis,sess){
         ${i===0?`<td rowspan="${dKpis.length}" style="vertical-align:middle">${divPill(div)}</td>`:''}
         <td>${k.kpi_name}${revised?`<span class="revised-badge">Revised</span>`:''}</td>
         <td style="font-size:12px;color:var(--text-muted);max-width:160px">${k.target}</td>
-        <td class="amount">Nu. ${fmt(k.budget_allocated)}</td>
-        <td class="amount">Nu. ${fmt(k.total_actual)}</td>
+        <td class="amount">Nu. ${fmtAmt(k.budget_allocated)}</td>
+        <td class="amount">Nu. ${fmtAmt(k.total_actual)}</td>
         <td class="amount ${bal<0?'over':''}">Nu. ${fmt(bal)}</td>
         <td style="text-align:center">${k.total_activities}</td>
         <td style="text-align:center">${+k.total_adhoc>0?`<span class="badge adhoc">⚡ ${k.total_adhoc}</span>`:'—'}</td>
@@ -509,7 +510,7 @@ function renderAPT(kpis,sess){
   const tBal=tBud-tActual,tP=tBud>0?Math.round(tActual/tBud*100):0;
   rows+=`<tr class="totals-row">
     <td colspan="3">Total</td>
-    <td class="amount">Nu. ${fmt(tBud)}</td><td class="amount">Nu. ${fmt(tActual)}</td>
+    <td class="amount">Nu. ${fmtAmt(tBud)}</td><td class="amount">Nu. ${fmtAmt(tActual)}</td>
     <td class="amount ${tBal<0?'over':''}">Nu. ${fmt(tBal)}</td>
     <td style="text-align:center">${tActs}</td>
     <td style="text-align:center">${tAdhocCount>0?`⚡ ${tAdhocCount}`:'—'}</td>
@@ -544,8 +545,8 @@ function renderAdhoc(adhoc,adhocSess,plannedActs,divs,plannedSess){
     <div class="kbox adhoc"><div class="l">Total ad hoc</div><div class="v">${totAdhoc}</div></div>
     <div class="kbox adhoc"><div class="l">Under a KPI</div><div class="v">${underKpi.length}</div></div>
     <div class="kbox adhoc"><div class="l">Standalone</div><div class="v">${standalone.length}</div></div>
-    <div class="kbox adhoc"><div class="l">Total actual (Nu.)</div><div class="v" style="font-size:15px">Nu. ${fmt(totExp)}</div></div>
-    <div class="kbox adhoc"><div class="l">Total reallocated (Nu.)</div><div class="v" style="font-size:15px">Nu. ${fmt(totRealloc)}</div></div>
+    <div class="kbox adhoc"><div class="l">Total actual (Nu.)</div><div class="v" style="font-size:15px">Nu. ${fmtAmt(totExp)}</div></div>
+    <div class="kbox adhoc"><div class="l">Total reallocated (Nu.)</div><div class="v" style="font-size:15px">Nu. ${fmtAmt(totRealloc)}</div></div>
     <div class="kbox adhoc"><div class="l">Participants reached</div><div class="v">${fmt(totP)}</div></div>`;
 
   // Chart: ad hoc by division
@@ -566,7 +567,7 @@ function renderAdhoc(adhoc,adhocSess,plannedActs,divs,plannedSess){
       {label:'Planned actual',data:divCodes.map(d=>plannedSess.filter(s=>s._div===d).reduce((a,s)=>a+ +s.expenditure,0)),backgroundColor:'#378ADDCC'},
       {label:'Ad hoc actual', data:divCodes.map(d=>adhocSess.filter(s=>s._div===d).reduce((a,s)=>a+ +s.expenditure,0)),  backgroundColor:'#C25A00CC'},
     ]},
-    options:{...COPTS,scales:{x:{ticks:{font:{size:11}}},y:{ticks:{font:{size:11},callback:v=>'Nu.'+fmt(v)}}}}
+    options:{...COPTS,scales:{x:{ticks:{font:{size:11}}},y:{ticks:{font:{size:11},callback:v=>'Nu.'+fmtAmt(v)}}}}
   });
 
   // Under KPI table
@@ -580,8 +581,8 @@ function renderAdhoc(adhoc,adhocSess,plannedActs,divs,plannedSess){
     <td style="text-align:center">${a.session_count||0}</td>
     <td>${fmt(a.total_participants)}</td>
     <td style="font-size:12px">${a.realloc_from_name||'—'}</td>
-    <td class="amount">Nu. ${fmt(a.realloc_amount)}</td>
-    <td class="amount">Nu. ${fmt(a.total_actual)}</td>
+    <td class="amount">Nu. ${fmtAmt(a.realloc_amount)}</td>
+    <td class="amount">Nu. ${fmtAmt(a.total_actual)}</td>
   </tr>`).join('')
   :`<tr><td colspan="11" class="empty">No ad hoc activities linked to a KPI.</td></tr>`;
 
@@ -595,8 +596,8 @@ function renderAdhoc(adhoc,adhocSess,plannedActs,divs,plannedSess){
     <td style="text-align:center">${a.session_count||0}</td>
     <td>${fmt(a.total_participants)}</td>
     <td style="font-size:12px">${a.realloc_from_name||'—'}</td>
-    <td class="amount">Nu. ${fmt(a.realloc_amount)}</td>
-    <td class="amount">Nu. ${fmt(a.total_actual)}</td>
+    <td class="amount">Nu. ${fmtAmt(a.realloc_amount)}</td>
+    <td class="amount">Nu. ${fmtAmt(a.total_actual)}</td>
   </tr>`).join('')
   :`<tr><td colspan="10" class="empty">No standalone ad hoc activities.</td></tr>`;
 
@@ -618,9 +619,9 @@ function renderAdhoc(adhoc,adhocSess,plannedActs,divs,plannedSess){
     return `<tr>
       <td>${divPill(s.div)}</td>
       <td style="font-weight:500">${s.name}</td>
-      <td class="amount">Nu. ${fmt(s.srcBudget)}</td>
+      <td class="amount">Nu. ${fmtAmt(s.srcBudget)}</td>
       <td class="amount" style="color:var(--orange);font-weight:600">Nu. ${fmt(s.totalRealloc)}</td>
-      <td class="amount ${remaining<0?'over':''}">Nu. ${fmt(remaining)}</td>
+      <td class="amount ${remaining<0?'over':''}">Nu. ${fmtAmt(remaining)}</td>
       <td style="text-align:center">${s.count}</td>
     </tr>`;
   }).join(''):`<tr><td colspan="6" class="empty">No reallocation data.</td></tr>`;
@@ -676,8 +677,8 @@ function renderPerformance(kpis,acts,divs){
       <td><span style="font-size:11px;color:var(--text-muted)">Planned</span></td>
       <td style="text-align:center">${a.session_count||0}</td>
       <td><span class="badge ${a.status}">${a.status}</span></td>
-      <td class="amount">Nu. ${fmt(a.budget_allocated)}</td>
-      <td class="amount">Nu. ${fmt(a.total_actual)}</td>
+      <td class="amount">Nu. ${fmtAmt(a.budget_allocated)}</td>
+      <td class="amount">Nu. ${fmtAmt(a.total_actual)}</td>
       <td>${pctBar(p,c.bg)}</td>
     </tr>`;
   }).join(''):`<tr><td colspan="9" class="empty">No activities.</td></tr>`;
@@ -692,11 +693,11 @@ function renderFinancial(divs,kpis,sess,plannedSess,adhocSess){
   const totAct=totPlanned+totAdhocExp;
   const bal=totBud-totAct, pct=totBud>0?Math.round(totAct/totBud*100):0;
   document.getElementById('fin-kpis').innerHTML=`
-    <div class="kbox" style="--accent:var(--blue)"><div class="l">Budget (Nu.)</div><div class="v" style="font-size:15px">Nu. ${fmt(totBud)}</div></div>
-    <div class="kbox" style="--accent:var(--teal)"><div class="l">Planned actual (Nu.)</div><div class="v" style="font-size:15px">Nu. ${fmt(totPlanned)}</div></div>
-    <div class="kbox adhoc"><div class="l">Ad hoc actual (Nu.)</div><div class="v" style="font-size:15px">Nu. ${fmt(totAdhocExp)}</div></div>
-    <div class="kbox" style="--accent:var(--purple)"><div class="l">Total actual (Nu.)</div><div class="v" style="font-size:15px">Nu. ${fmt(totAct)}</div><div class="sub">${pct}% of budget</div></div>
-    <div class="kbox" style="--accent:${bal<0?'var(--red)':'var(--gray)'}"><div class="l">Balance (Nu.)</div><div class="v" style="font-size:15px;color:${bal<0?'var(--red)':'inherit'}">Nu. ${fmt(bal)}</div></div>`;
+    <div class="kbox" style="--accent:var(--blue)"><div class="l">Budget (Nu.)</div><div class="v" style="font-size:15px">Nu. ${fmtAmt(totBud)}</div></div>
+    <div class="kbox" style="--accent:var(--teal)"><div class="l">Planned actual (Nu.)</div><div class="v" style="font-size:15px">Nu. ${fmtAmt(totPlanned)}</div></div>
+    <div class="kbox adhoc"><div class="l">Ad hoc actual (Nu.)</div><div class="v" style="font-size:15px">Nu. ${fmtAmt(totAdhocExp)}</div></div>
+    <div class="kbox" style="--accent:var(--purple)"><div class="l">Total actual (Nu.)</div><div class="v" style="font-size:15px">Nu. ${fmtAmt(totAct)}</div><div class="sub">${pct}% of budget</div></div>
+    <div class="kbox" style="--accent:${bal<0?'var(--red)':'var(--gray)'}"><div class="l">Balance (Nu.)</div><div class="v" style="font-size:15px;color:${bal<0?'var(--red)':'inherit'}">Nu. ${fmtAmt(bal)}</div></div>`;
 
   const months=FY_MONTHS.filter(m=>m>=from&&m<=to);
   const labels=months.map(m=>MLABELS[FY_MONTHS.indexOf(m)]);
@@ -716,7 +717,7 @@ function renderFinancial(divs,kpis,sess,plannedSess,adhocSess){
         borderTop:'2px dashed #fff',
       })),
     ]},
-    options:{...COPTS,scales:{x:{stacked:true,ticks:{font:{size:11}}},y:{stacked:true,ticks:{font:{size:11},callback:v=>'Nu.'+fmt(v)}}}}
+    options:{...COPTS,scales:{x:{stacked:true,ticks:{font:{size:11}}},y:{stacked:true,ticks:{font:{size:11},callback:v=>'Nu.'+fmtAmt(v)}}}}
   });
 
   destroyChart('budget');
@@ -726,7 +727,7 @@ function renderFinancial(divs,kpis,sess,plannedSess,adhocSess){
       {label:'Planned actual',data:divs.map(d=>plannedSess.filter(s=>s._div===d.code).reduce((a,s)=>a+ +s.expenditure,0)),backgroundColor:'#1D9E75CC'},
       {label:'Ad hoc actual', data:divs.map(d=>adhocSess.filter(s=>s._div===d.code).reduce((a,s)=>a+ +s.expenditure,0)),backgroundColor:'#C25A00CC'},
     ]},
-    options:{...COPTS,scales:{x:{ticks:{font:{size:11}}},y:{ticks:{font:{size:11},callback:v=>'Nu.'+fmt(v)}}}}
+    options:{...COPTS,scales:{x:{ticks:{font:{size:11}}},y:{ticks:{font:{size:11},callback:v=>'Nu.'+fmtAmt(v)}}}}
   });
 
   destroyChart('kpi-budget');
@@ -736,7 +737,7 @@ function renderFinancial(divs,kpis,sess,plannedSess,adhocSess){
         {label:'Allocated',data:kpis.map(k=>+k.budget_allocated),backgroundColor:'#378ADD55'},
         {label:'Actual',   data:kpis.map(k=>+k.total_actual),     backgroundColor:kpis.map(k=>(DIV_COLORS[k.division_code]?.bg||'#888')+'CC')},
       ]},
-    options:{indexAxis:'y',...COPTS,scales:{x:{ticks:{font:{size:11},callback:v=>'Nu.'+fmt(v)}},y:{ticks:{font:{size:10}}}}}
+    options:{indexAxis:'y',...COPTS,scales:{x:{ticks:{font:{size:11},callback:v=>'Nu.'+fmtAmt(v)}},y:{ticks:{font:{size:10}}}}}
   });
 
   const tb=document.getElementById('fin-div-body');
@@ -751,22 +752,22 @@ function renderFinancial(divs,kpis,sess,plannedSess,adhocSess){
     return `<tr>
       <td>${divPill(d.code)}</td>
       <td style="text-align:center">${d.total_kpis||0}</td>
-      <td class="amount">Nu. ${fmt(d.total_budget)}</td>
-      <td class="amount">Nu. ${fmt(dPl)}</td>
-      <td class="amount" style="color:var(--orange);font-weight:${dAh>0?'600':'400'}">Nu. ${fmt(dAh)}</td>
-      <td class="amount">Nu. ${fmt(dTot)}</td>
-      <td class="amount ${dBal<0?'over':''}">Nu. ${fmt(dBal)}</td>
+      <td class="amount">Nu. ${fmtAmt(d.total_budget)}</td>
+      <td class="amount">Nu. ${fmtAmt(dPl)}</td>
+      <td class="amount" style="color:var(--orange);font-weight:${dAh>0?'600':'400'}">Nu. ${fmtAmt(dAh)}</td>
+      <td class="amount">Nu. ${fmtAmt(dTot)}</td>
+      <td class="amount ${dBal<0?'over':''}">Nu. ${fmtAmt(dBal)}</td>
       <td>${pctBar(p,c.bg)}</td>
     </tr>`;
   }).join('');
   const tTot=tPl+tAh, tBal2=tBud2-tTot, tP=tBud2>0?Math.round(tTot/tBud2*100):0;
   tb.innerHTML+=`<tr class="totals-row">
     <td colspan="2">Total</td>
-    <td class="amount">Nu. ${fmt(tBud2)}</td>
-    <td class="amount">Nu. ${fmt(tPl)}</td>
-    <td class="amount" style="color:var(--orange)">Nu. ${fmt(tAh)}</td>
-    <td class="amount">Nu. ${fmt(tTot)}</td>
-    <td class="amount ${tBal2<0?'over':''}">Nu. ${fmt(tBal2)}</td>
+    <td class="amount">Nu. ${fmtAmt(tBud2)}</td>
+    <td class="amount">Nu. ${fmtAmt(tPl)}</td>
+    <td class="amount" style="color:var(--orange)">Nu. ${fmtAmt(tAh)}</td>
+    <td class="amount">Nu. ${fmtAmt(tTot)}</td>
+    <td class="amount ${tBal2<0?'over':''}">Nu. ${fmtAmt(tBal2)}</td>
     <td><strong>${tP}%</strong></td></tr>`;
 }
 
@@ -861,7 +862,7 @@ function renderSessionLog(sess){
     <td>${s.target_audience||'—'}</td>
     <td><strong>${fmt(s.participants_total)}</strong></td>
     <td>${fmt(s.participants_male)}</td><td>${fmt(s.participants_female)}</td>
-    <td class="amount">Nu. ${fmt(s.expenditure)}</td>
+    <td class="amount">Nu. ${fmtAmt(s.expenditure)}</td>
     <td>${s.duration||'—'}</td>
     <td style="font-size:12px;max-width:130px;white-space:normal">${s.remarks||'—'}</td>
     <td>${s.entered_by}</td>
