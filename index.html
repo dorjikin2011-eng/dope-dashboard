@@ -129,7 +129,7 @@
 <nav>
   <div class="brand">
     ACC · DoPE
-    <span>Performance Dashboard FY 2026–2027</span>
+    <span>Performance Dashboard FY 2026–2027 (Amount in Nu. millions) </span>
   </div>
   <div class="nav-links">
     <a href="index.html" class="active">Home</a>
@@ -219,7 +219,7 @@ async function query(path) {
 }
 
 function fmt(n) {
-  return Number(n || 0).toLocaleString('en-IN');
+  return Number(n || 0).toFixed(3);
 }
 
 async function load() {
