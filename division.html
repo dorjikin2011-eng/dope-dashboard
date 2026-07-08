@@ -711,7 +711,7 @@ function populateReallocSelect(){
   const sel=document.getElementById('a-realloc-from');
   sel.innerHTML='<option value="">— Select source activity —</option>';
   // All planned activities in this division as potential sources
-  activities.forEach(a=>{ const o=document.createElement('option'); o.value=a.id; o.textContent=`${a.name} (Nu. ${fmt(+a.budget_allocated - +a.total_actual)} remaining)`; sel.appendChild(o); });
+  activities.forEach(a=>{ const o=document.createElement('option'); o.value=a.id; o.textContent=`${a.name} (Nu. ${fmtAmt(+a.budget_allocated - +a.total_actual)} remaining)`; sel.appendChild(o); });
 }
 
 // Show remaining balance when source is selected
