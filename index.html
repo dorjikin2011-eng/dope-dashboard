@@ -129,11 +129,12 @@
 <nav>
   <div class="brand">
     ACC · DoPE
-    <span>Performance Dashboard FY 2026–2027 (Amount in Nu. millions) </span>
+    <span>Performance Dashboard FY 2026–2027</span>
   </div>
   <div class="nav-links">
     <a href="index.html" class="active">Home</a>
     <a href="reports.html">Reports</a>
+    <a href="auditlog.html">Activity Log</a>
   </div>
 </nav>
 
@@ -188,6 +189,18 @@
     </div>
   </div>
 
+  <!-- NU. MILLION REMINDER -->
+  <div class="section">
+    <div style="display:flex;align-items:center;gap:10px;background:#FAEEDA;
+      border:1px solid #BA7517;border-radius:8px;padding:11px 16px;">
+      <span style="font-size:18px">⚠</span>
+      <span style="font-size:13px;color:#7A4D0F">
+        <strong>Important:</strong> Please enter all budget and expenditure figures in
+        <strong>Nu. Million</strong> — e.g. Nu. 1.500 = Nu. 1,500,000 (fifteen lakh).
+      </span>
+    </div>
+  </div>
+
   <!-- DIVISION CARDS -->
   <div class="section">
     <h2>Divisions</h2>
@@ -196,12 +209,24 @@
     </div>
   </div>
 
+  <!-- RECENT ACTIVITIES -->
+  <div class="section">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <h2 style="margin:0">Recent activities</h2>
+      <a href="auditlog.html" style="font-size:13px;color:var(--purple);text-decoration:none;
+        font-weight:600">View full log →</a>
+    </div>
+    <div id="recent-log">
+      <div class="loading">Loading…</div>
+    </div>
+  </div>
+
 </div>
 
 <script>
 // ── CONFIG — replace with your Supabase project values ──
-const SUPA_URL = 'https://fiozcsxlnpvphrxwvzzy.supabase.co';
-const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZpb3pjc3hsbnB2cGhyeHd2enp5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwNzkxNTYsImV4cCI6MjA5NjY1NTE1Nn0.1XZn61C23mE5LkltAC1VU57-iWySlJsy1_9-ZRAW1I8';
+const SUPA_URL = 'https://YOUR_PROJECT_ID.supabase.co';
+const SUPA_KEY = 'YOUR_ANON_PUBLIC_KEY';
 
 const DIVISION_COLORS = {
   ADMD: { accent: '#378ADD', light: '#E6F1FB' },
@@ -219,7 +244,7 @@ async function query(path) {
 }
 
 function fmt(n) {
-  return Number(n || 0).toFixed(3);
+  return Number(n || 0).toLocaleString('en-IN');
 }
 
 async function load() {
@@ -395,7 +420,93 @@ function renderAPT(kpis) {
   tb.innerHTML = rows;
 }
 
+async function loadRecentLog() {
+  const el = document.getElementById('recent-log');
+  try {
+    const rows = await query(
+      '/rest/v1/v_audit_log?select=*&limit=8'
+    );
+    if (!rows.length) {
+      el.innerHTML = `<div style="text-align:center;padding:24px;color:var(--text-muted);
+        font-size:13px;background:var(--card);border-radius:var(--radius);
+        border:0.5px solid var(--border)">
+        No activity recorded yet. Start by adding KPIs in each division.</div>`;
+      return;
+    }
+
+    const DIV_COLORS_LOG = {
+      ADMD:{bg:'#378ADD',light:'#E6F1FB'},
+      EAD: {bg:'#1D9E75',light:'#E1F5EE'},
+      ED:  {bg:'#D85A30',light:'#FAECE7'},
+      PD:  {bg:'#534AB7',light:'#EEEDFE'},
+    };
+
+    function timeAgo(ts) {
+      const diff = Math.floor((Date.now() - new Date(ts)) / 1000);
+      if (diff < 60)   return 'just now';
+      if (diff < 3600) return Math.floor(diff/60) + 'm ago';
+      if (diff < 86400)return Math.floor(diff/3600) + 'h ago';
+      return Math.floor(diff/86400) + 'd ago';
+    }
+
+    function actionIcon(field) {
+      if (field.includes('created'))  return '＋';
+      if (field.includes('Session'))  return '📋';
+      if (field.includes('Status'))   return '🔄';
+      if (field.includes('Budget') || field.includes('Expenditure')) return '💰';
+      if (field.includes('Ad hoc'))   return '⚡';
+      return '✎';
+    }
+
+    el.innerHTML = `
+      <div style="background:var(--card);border:0.5px solid var(--border);
+        border-radius:var(--radius);overflow:hidden;">
+        ${rows.map((r, i) => {
+          const c = DIV_COLORS_LOG[r.division_code] || {bg:'#888',light:'#eee'};
+          const divPill = r.division_code
+            ? `<span style="font-size:10px;padding:1px 8px;border-radius:20px;
+                font-weight:600;background:${c.light};color:${c.bg};margin-right:6px">${r.division_code}</span>`
+            : '';
+          const actName = r.activity_name
+            ? `<span style="font-weight:600">${r.activity_name}</span>`
+            : '<span style="color:var(--text-muted)">—</span>';
+          const kpiName = r.kpi_name
+            ? `<span style="color:var(--text-muted)"> · ${r.kpi_name}</span>`
+            : '';
+          const changeDetail = r.old_value
+            ? `<span style="color:var(--red);text-decoration:line-through;margin-right:4px">${r.old_value}</span>
+               <span style="color:var(--green);font-weight:500">${r.new_value||'—'}</span>`
+            : `<span style="color:var(--text-muted)">${r.new_value||'—'}</span>`;
+
+          return `
+            <div style="display:flex;align-items:flex-start;gap:12px;padding:12px 16px;
+              ${i < rows.length-1 ? 'border-bottom:0.5px solid var(--border)' : ''}">
+              <div style="font-size:18px;margin-top:1px;min-width:24px;text-align:center">
+                ${actionIcon(r.field_changed||'')}
+              </div>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:13px;line-height:1.5">
+                  ${divPill}${actName}${kpiName}
+                </div>
+                <div style="font-size:12px;color:var(--text-muted);margin-top:2px">
+                  <strong style="color:var(--text)">${r.updated_by||'Unknown'}</strong>
+                  · ${r.field_changed||''}
+                  · ${changeDetail}
+                </div>
+              </div>
+              <div style="font-size:11px;color:var(--text-muted);white-space:nowrap;margin-top:2px">
+                ${timeAgo(r.updated_at)}
+              </div>
+            </div>`;
+        }).join('')}
+      </div>`;
+  } catch(e) {
+    el.innerHTML = `<div class="err">Error loading activity log: ${e.message}</div>`;
+  }
+}
+
 load();
+loadRecentLog();
 </script>
 </body>
 </html>
