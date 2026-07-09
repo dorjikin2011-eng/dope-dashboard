@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Activity Log — DoPE Dashboard</title>
+<style>
+  :root {
+    --purple:#534AB7; --purple-light:#EEEDFE;
+    --teal:#1D9E75;   --teal-light:#E1F5EE;
+    --blue:#378ADD;   --blue-light:#E6F1FB;
+    --green:#639922;  --green-light:#EAF3DE;
+    --amber:#BA7517;  --amber-light:#FAEEDA;
+    --red:#A32D2D;    --red-light:#FCEBEB;
+    --gray:#5F5E5A;   --gray-light:#F1EFE8;
+    --orange:#C25A00; --orange-light:#FDF0E6;
+    --text:#2C2C2A;   --text-muted:#5F5E5A;
+    --border:rgba(0,0,0,0.12);
+    --bg:#F6F5F0;     --card:#FFFFFF;
+    --radius:10px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:system-ui,sans-serif;background:var(--bg);color:var(--text);font-size:15px;}
+
+  nav{background:var(--purple);color:#fff;padding:0 24px;height:52px;
+    display:flex;align-items:center;justify-content:space-between;
+    position:sticky;top:0;z-index:100;}
+  nav .brand{font-weight:600;font-size:15px;}
+  nav .brand span{opacity:.7;font-weight:400;margin-left:8px;font-size:13px;}
+  nav .nav-links{display:flex;gap:6px;}
+  nav a{color:rgba(255,255,255,.85);text-decoration:none;padding:6px 14px;
+    border-radius:6px;font-size:13px;transition:background .15s;}
+  nav a:hover,nav a.active{background:rgba(255,255,255,.18);color:#fff;}
+
+  .page{max-width:1100px;margin:0 auto;padding:24px 20px 60px;}
+  .breadcrumb{font-size:13px;color:var(--text-muted);margin-bottom:18px;}
+  .breadcrumb a{color:var(--purple);text-decoration:none;}
+  .breadcrumb a:hover{text-decoration:underline;}
+
+  /* FILTER BAR */
+  .filter-bar{background:var(--card);border:0.5px solid var(--border);
+    border-radius:var(--radius);padding:14px 20px;
+    display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:20px;}
+  .filter-bar label{font-size:12px;font-weight:600;color:var(--text-muted);margin-right:4px;}
+  .filter-bar select,.filter-bar input{padding:7px 10px;border:1px solid var(--border);
+    border-radius:7px;font-size:13px;font-family:inherit;
+    background:#fff;color:var(--text);outline:none;}
+  .filter-bar select:focus,.filter-bar input:focus{border-color:var(--purple);}
+  .spacer{flex:1;}
+  .btn{display:inline-flex;align-items:center;gap:5px;padding:7px 14px;
+    border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;
+    border:none;transition:opacity .15s;}
+  .btn:hover{opacity:.85;}
+  .btn-outline{background:#fff;color:var(--text);border:1px solid var(--border);}
+  .btn-purple{background:var(--purple);color:#fff;}
+
+  /* SUMMARY STRIP */
+  .summary-strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));
+    gap:12px;margin-bottom:20px;}
+  .sbox{background:var(--card);border:0.5px solid var(--border);
+    border-radius:var(--radius);padding:12px 16px;
+    border-left:3px solid var(--accent,var(--purple));}
+  .sbox .l{font-size:11px;color:var(--text-muted);margin-bottom:3px;}
+  .sbox .v{font-size:20px;font-weight:700;color:var(--accent,var(--purple));}
+
+  /* LOG FEED */
+  .log-card{background:var(--card);border:0.5px solid var(--border);
+    border-radius:var(--radius);overflow:hidden;margin-bottom:20px;}
+  .log-entry{display:flex;align-items:flex-start;gap:14px;
+    padding:14px 18px;border-bottom:0.5px solid var(--border);}
+  .log-entry:last-child{border-bottom:none;}
+  .log-entry:hover{background:var(--blue-light);}
+  .log-icon{font-size:20px;min-width:28px;text-align:center;margin-top:2px;}
+  .log-body{flex:1;min-width:0;}
+  .log-title{font-size:13px;font-weight:600;line-height:1.4;margin-bottom:3px;}
+  .log-meta{font-size:12px;color:var(--text-muted);line-height:1.6;}
+  .log-change{margin-top:4px;font-size:12px;}
+  .log-old{color:var(--red);text-decoration:line-through;margin-right:6px;}
+  .log-new{color:var(--green);font-weight:600;}
+  .log-time{font-size:11px;color:var(--text-muted);white-space:nowrap;
+    margin-top:2px;text-align:right;min-width:80px;}
+
+  /* BADGES + PILLS */
+  .div-pill{display:inline-block;font-size:10px;padding:1px 8px;
+    border-radius:20px;font-weight:600;margin-right:5px;vertical-align:middle;}
+  .type-badge{display:inline-block;font-size:10px;padding:1px 8px;
+    border-radius:20px;font-weight:600;vertical-align:middle;margin-right:5px;}
+  .type-badge.create {background:var(--teal-light);  color:var(--teal);}
+  .type-badge.update {background:var(--blue-light);   color:var(--blue);}
+  .type-badge.session{background:var(--purple-light); color:var(--purple);}
+  .type-badge.adhoc  {background:var(--orange-light); color:var(--orange);}
+  .type-badge.status {background:var(--amber-light);  color:var(--amber);}
+  .type-badge.budget {background:var(--green-light);  color:var(--green);}
+
+  /* PAGINATION */
+  .pagination{display:flex;justify-content:center;align-items:center;
+    gap:8px;margin-top:16px;flex-wrap:wrap;}
+  .pagination button{padding:6px 14px;border-radius:7px;border:1px solid var(--border);
+    background:#fff;font-size:13px;cursor:pointer;transition:background .15s;}
+  .pagination button:hover:not(:disabled){background:var(--purple-light);color:var(--purple);}
+  .pagination button.active{background:var(--purple);color:#fff;border-color:var(--purple);}
+  .pagination button:disabled{opacity:.4;cursor:default;}
+  .page-info{font-size:13px;color:var(--text-muted);}
+
+  .loading{text-align:center;padding:40px;color:var(--text-muted);}
+  .err-box{background:var(--red-light);color:var(--red);border-radius:8px;
+    padding:12px 16px;font-size:13px;margin-bottom:14px;}
+  .empty{text-align:center;padding:40px;color:var(--text-muted);font-size:13px;}
+
+  @media(max-width:600px){
+    .filter-bar{gap:8px;}
+    .summary-strip{grid-template-columns:1fr 1fr;}
+  }
+  @media print{
+    nav,.filter-bar,.pagination,.btn{display:none!important;}
+    .page{padding:0;}
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="brand">ACC · DoPE <span>Performance Dashboard FY 2026–2027</span></div>
+  <div class="nav-links">
+    <a href="index.html">Home</a>
+    <a href="reports.html">Reports</a>
+    <a href="auditlog.html" class="active">Activity Log</a>
+  </div>
+</nav>
+
+<div class="page">
+  <div class="breadcrumb">
+    <a href="index.html">Home</a> › Activity Log
+  </div>
+
+  <!-- FILTERS -->
+  <div class="filter-bar">
+    <div>
+      <label>Division</label>
+      <select id="f-div">
+        <option value="">All divisions</option>
+        <option>ADMD</option><option>EAD</option>
+        <option>ED</option><option>PD</option>
+      </select>
+    </div>
+    <div>
+      <label>Action type</label>
+      <select id="f-type">
+        <option value="">All actions</option>
+        <option value="created">Created</option>
+        <option value="session">Session</option>
+        <option value="status">Status change</option>
+        <option value="budget">Budget / expenditure</option>
+        <option value="adhoc">Ad hoc</option>
+        <option value="update">Other updates</option>
+      </select>
+    </div>
+    <div>
+      <label>Updated by</label>
+      <input id="f-user" type="text" placeholder="Search name…" style="width:150px"/>
+    </div>
+    <div>
+      <label>From date</label>
+      <input id="f-from" type="date"/>
+    </div>
+    <div>
+      <label>To date</label>
+      <input id="f-to" type="date"/>
+    </div>
+    <div class="spacer"></div>
+    <button class="btn btn-outline" id="btn-reset">✕ Reset</button>
+    <button class="btn btn-outline" id="btn-csv">⬇ Export CSV</button>
+    <button class="btn btn-purple" id="btn-print">🖨 Print</button>
+  </div>
+
+  <!-- SUMMARY STRIP -->
+  <div class="summary-strip" id="summary-strip">
+    <div class="loading" style="grid-column:1/-1">Loading…</div>
+  </div>
+
+  <!-- ERR -->
+  <div class="err-box" id="err" style="display:none"></div>
+
+  <!-- LOG FEED -->
+  <div id="log-wrap"><div class="loading">Loading…</div></div>
+
+  <!-- PAGINATION -->
+  <div class="pagination" id="pagination"></div>
+</div>
+
+<script>
+const SUPA_URL = 'https://fiozcsxlnpvphrxwvzzy.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZpb3pjc3hsbnB2cGhyeHd2enp5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwNzkxNTYsImV4cCI6MjA5NjY1NTE1Nn0.1XZn61C23mE5LkltAC1VU57-iWySlJsy1_9-ZRAW1I8';
+
+const DIV_COLORS = {
+  ADMD:{accent:'#378ADD',light:'#E6F1FB'},
+  EAD: {accent:'#1D9E75',light:'#E1F5EE'},
+  ED:  {accent:'#D85A30',light:'#FAECE7'},
+  PD:  {accent:'#534AB7',light:'#EEEDFE'},
+};
+
+const PAGE_SIZE = 20;
+let allRows = [], filtered = [], currentPage = 1;
+
+function showErr(m){ const e=document.getElementById('err'); e.textContent=m; e.style.display=m?'block':'none'; }
+
+async function api(path){
+  const r=await fetch(SUPA_URL+path,{headers:{apikey:SUPA_KEY,Authorization:'Bearer '+SUPA_KEY}});
+  if(!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+
+// ── LOAD ALL ──
+async function load(){
+  try {
+    // fetch up to 1000 rows — sufficient for a full FY
+    const rows = await api('/rest/v1/v_audit_log?select=*&limit=1000');
+    allRows = rows || [];
+    applyFilters();
+  } catch(e){ showErr('Error loading log: '+e.message); }
+}
+
+// ── FILTERS ──
+function getFilters(){
+  return {
+    div:  document.getElementById('f-div').value,
+    type: document.getElementById('f-type').value,
+    user: document.getElementById('f-user').value.trim().toLowerCase(),
+    from: document.getElementById('f-from').value,
+    to:   document.getElementById('f-to').value,
+  };
+}
+
+function matchType(field, type){
+  if(!type) return true;
+  const f=(field||'').toLowerCase();
+  if(type==='created')  return f.includes('created');
+  if(type==='session')  return f.includes('session');
+  if(type==='status')   return f.includes('status');
+  if(type==='budget')   return f.includes('budget')||f.includes('expenditure');
+  if(type==='adhoc')    return f.includes('ad hoc')||f.includes('adhoc');
+  if(type==='update')   return !f.includes('created')&&!f.includes('session')&&!f.includes('status')&&!f.includes('budget')&&!f.includes('adhoc');
+  return true;
+}
+
+function applyFilters(){
+  const{div,type,user,from,to}=getFilters();
+  filtered=allRows.filter(r=>{
+    if(div  && r.division_code!==div) return false;
+    if(type && !matchType(r.field_changed,type)) return false;
+    if(user && !(r.updated_by||'').toLowerCase().includes(user)) return false;
+    if(from && r.updated_at?.slice(0,10)<from) return false;
+    if(to   && r.updated_at?.slice(0,10)>to)   return false;
+    return true;
+  });
+  currentPage=1;
+  renderSummary();
+  renderLog();
+  renderPagination();
+}
+
+['f-div','f-type'].forEach(id=>document.getElementById(id).addEventListener('change',applyFilters));
+document.getElementById('f-user').addEventListener('input',applyFilters);
+document.getElementById('f-from').addEventListener('change',applyFilters);
+document.getElementById('f-to').addEventListener('change',applyFilters);
+
+document.getElementById('btn-reset').addEventListener('click',()=>{
+  ['f-div','f-type'].forEach(id=>document.getElementById(id).value='');
+  ['f-user'].forEach(id=>document.getElementById(id).value='');
+  ['f-from','f-to'].forEach(id=>document.getElementById(id).value='');
+  applyFilters();
+});
+
+// ── HELPERS ──
+function fmtDateTime(ts){
+  if(!ts) return '—';
+  const d=new Date(ts);
+  return d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})
+    +' '+d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+}
+function timeAgo(ts){
+  const diff=Math.floor((Date.now()-new Date(ts))/1000);
+  if(diff<60)    return 'just now';
+  if(diff<3600)  return Math.floor(diff/60)+'m ago';
+  if(diff<86400) return Math.floor(diff/3600)+'h ago';
+  if(diff<604800)return Math.floor(diff/86400)+'d ago';
+  return fmtDateTime(ts);
+}
+
+function getTypeInfo(field){
+  const f=(field||'').toLowerCase();
+  if(f.includes('created')&&f.includes('ad hoc')) return {label:'Ad hoc',cls:'adhoc',icon:'⚡'};
+  if(f.includes('created'))   return {label:'Created',  cls:'create', icon:'＋'};
+  if(f.includes('session'))   return {label:'Session',  cls:'session',icon:'📋'};
+  if(f.includes('status'))    return {label:'Status',   cls:'status', icon:'🔄'};
+  if(f.includes('budget')||f.includes('expenditure')) return {label:'Budget',cls:'budget',icon:'💰'};
+  if(f.includes('ad hoc'))    return {label:'Ad hoc',   cls:'adhoc',  icon:'⚡'};
+  return {label:'Update',cls:'update',icon:'✎'};
+}
+
+function divPill(code){
+  const c=DIV_COLORS[code]||{accent:'#888',light:'#eee'};
+  return code?`<span class="div-pill" style="background:${c.light};color:${c.accent}">${code}</span>`:'';
+}
+
+// ── SUMMARY STRIP ──
+function renderSummary(){
+  const total=filtered.length;
+  const byDiv={};
+  filtered.forEach(r=>{ if(r.division_code){ byDiv[r.division_code]=(byDiv[r.division_code]||0)+1; } });
+  const users=new Set(filtered.map(r=>r.updated_by).filter(Boolean));
+  const sessions=filtered.filter(r=>(r.field_changed||'').toLowerCase().includes('session')).length;
+  const creates=filtered.filter(r=>(r.field_changed||'').toLowerCase().includes('created')).length;
+
+  document.getElementById('summary-strip').innerHTML=`
+    <div class="sbox" style="--accent:var(--purple)">
+      <div class="l">Total entries</div><div class="v">${total}</div>
+    </div>
+    <div class="sbox" style="--accent:var(--teal)">
+      <div class="l">New records created</div><div class="v">${creates}</div>
+    </div>
+    <div class="sbox" style="--accent:var(--blue)">
+      <div class="l">Sessions recorded</div><div class="v">${sessions}</div>
+    </div>
+    <div class="sbox" style="--accent:var(--gray)">
+      <div class="l">Staff who updated</div><div class="v">${users.size}</div>
+    </div>
+    ${Object.entries(byDiv).map(([code,count])=>{
+      const c=DIV_COLORS[code]||{accent:'#888'};
+      return `<div class="sbox" style="--accent:${c.accent}">
+        <div class="l">${code} entries</div><div class="v">${count}</div>
+      </div>`;
+    }).join('')}`;
+}
+
+// ── LOG FEED ──
+function renderLog(){
+  const wrap=document.getElementById('log-wrap');
+  if(!filtered.length){
+    wrap.innerHTML=`<div class="log-card"><div class="empty">No log entries match the current filters.</div></div>`;
+    return;
+  }
+  const start=(currentPage-1)*PAGE_SIZE;
+  const page=filtered.slice(start,start+PAGE_SIZE);
+
+  wrap.innerHTML=`
+    <div class="log-card">
+      ${page.map(r=>{
+        const ti=getTypeInfo(r.field_changed);
+        const changeHtml=r.old_value
+          ?`<span class="log-old">${r.old_value}</span>→ <span class="log-new">${r.new_value||'—'}</span>`
+          :`<span style="color:var(--text-muted)">${r.new_value||'—'}</span>`;
+        const actLink=r.activity_id
+          ?`<a href="activity.html?id=${r.activity_id}" style="color:var(--purple);
+              text-decoration:none;font-weight:600" onclick="event.stopPropagation()">
+              ${r.activity_name||'Activity #'+r.activity_id}</a>`
+          :`<span style="color:var(--text-muted)">—</span>`;
+        const kpiName=r.kpi_name
+          ?`<span style="color:var(--text-muted)"> · ${r.kpi_name}</span>`:'';
+        const sessionDate=r.session_date
+          ?`<span style="color:var(--text-muted)"> · Session: ${new Date(r.session_date).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}</span>`:'';
+
+        return `
+          <div class="log-entry">
+            <div class="log-icon">${ti.icon}</div>
+            <div class="log-body">
+              <div class="log-title">
+                ${divPill(r.division_code)}
+                <span class="type-badge ${ti.cls}">${ti.label}</span>
+                ${actLink}${kpiName}${sessionDate}
+              </div>
+              <div class="log-meta">
+                <strong style="color:var(--text)">${r.updated_by||'Unknown'}</strong>
+                · ${r.field_changed||''}
+              </div>
+              <div class="log-change">${changeHtml}</div>
+            </div>
+            <div class="log-time">
+              <div>${timeAgo(r.updated_at)}</div>
+              <div style="margin-top:2px;font-size:10px">${fmtDateTime(r.updated_at)}</div>
+            </div>
+          </div>`;
+      }).join('')}
+    </div>`;
+}
+
+// ── PAGINATION ──
+function renderPagination(){
+  const total=Math.ceil(filtered.length/PAGE_SIZE);
+  const pg=document.getElementById('pagination');
+  if(total<=1){ pg.innerHTML=''; return; }
+
+  let html=`<button ${currentPage===1?'disabled':''} onclick="goPage(${currentPage-1})">← Prev</button>`;
+  // show max 7 page buttons
+  const start=Math.max(1,currentPage-3);
+  const end=Math.min(total,start+6);
+  for(let i=start;i<=end;i++){
+    html+=`<button class="${i===currentPage?'active':''}" onclick="goPage(${i})">${i}</button>`;
+  }
+  html+=`<button ${currentPage===total?'disabled':''} onclick="goPage(${currentPage+1})">Next →</button>`;
+  html+=`<span class="page-info">Page ${currentPage} of ${total} · ${filtered.length} entries</span>`;
+  pg.innerHTML=html;
+}
+
+function goPage(n){
+  currentPage=n;
+  renderLog();
+  renderPagination();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// ── CSV EXPORT ──
+document.getElementById('btn-csv').addEventListener('click',()=>{
+  const{div,type,user,from,to}=getFilters();
+  const rows=[
+    ['DoPE Activity Log — FY 2026-2027'],
+    [`Filters — Division: ${div||'All'} | Type: ${type||'All'} | User: ${user||'All'} | From: ${from||'—'} | To: ${to||'—'}`],
+    [],
+    ['Timestamp','Division','KPI','Activity','Field changed','Old value','New value','Updated by','Session date'],
+    ...filtered.map(r=>[
+      fmtDateTime(r.updated_at),
+      r.division_code||'',
+      r.kpi_name||'',
+      r.activity_name||'',
+      r.field_changed||'',
+      r.old_value||'',
+      r.new_value||'',
+      r.updated_by||'',
+      r.session_date||'',
+    ])
+  ];
+  const csv=rows.map(r=>r.map(v=>`"${String(v??'').replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+  a.download=`DoPE_ActivityLog_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+});
+
+document.getElementById('btn-print').addEventListener('click',()=>window.print());
+
+load();
+</script>
+</body>
+</html>
