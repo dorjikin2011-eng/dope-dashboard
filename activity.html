@@ -230,8 +230,16 @@
           <input id="e-budget" type="number" min="0"/>
         </div>
         <div>
-          <label>Expected completion</label>
-          <input id="e-expected" type="month"/>
+          <label>Location / Venue</label>
+          <input id="e-location" type="text" placeholder="e.g. Thimphu, Fieldwork, Dzongkhagwide"/>
+        </div>
+        <div>
+          <label>Start Date</label>
+          <input id="e-startdate" type="date"/>
+        </div>
+        <div>
+          <label>End Date</label>
+          <input id="e-enddate" type="date"/>
         </div>
         <div>
           <label>Status <span class="required">*</span></label>
@@ -412,7 +420,9 @@ function renderHeader(){
       <div class="act-stat"><div class="l">Sessions</div><div class="v">${a.session_count||0}</div></div>
       <div class="act-stat"><div class="l">Total participants</div><div class="v">${fmt(a.total_participants)}</div></div>
       <div class="act-stat"><div class="l">Male / Female</div><div class="v">${fmt(a.total_male)} / ${fmt(a.total_female)}</div></div>
-      ${a.expected_date?`<div class="act-stat"><div class="l">Expected completion</div><div class="v">${a.expected_date.slice(0,7)}</div></div>`:''}
+      ${a.location?`<div class="act-stat"><div class="l">Location</div><div class="v">${a.location}</div></div>`:''}
+      ${a.start_date?`<div class="act-stat"><div class="l">Start Date</div><div class="v">${fmtDate(a.start_date)}</div></div>`:''}
+      ${a.end_date?`<div class="act-stat"><div class="l">End Date</div><div class="v">${fmtDate(a.end_date)}</div></div>`:''}
     </div>
     <div class="bar-track" style="margin-top:14px">
       <div class="bar-fill" style="width:${pct}%"></div>
@@ -488,11 +498,13 @@ async function loadLog(){
 function populateEditForm(){
   const a = activity;
   if(!a) return;
-  document.getElementById('e-name').value     = a.name||'';
-  document.getElementById('e-target').value   = a.target||'';
-  document.getElementById('e-budget').value   = a.budget_allocated||'';
-  document.getElementById('e-expected').value = a.expected_date?a.expected_date.slice(0,7):'';
-  document.getElementById('e-status').value   = a.status||'Not Started';
+  document.getElementById('e-name').value      = a.name||'';
+  document.getElementById('e-target').value    = a.target||'';
+  document.getElementById('e-budget').value    = a.budget_allocated||'';
+  document.getElementById('e-location').value  = a.location||'';
+  document.getElementById('e-startdate').value = a.start_date||'';
+  document.getElementById('e-enddate').value   = a.end_date||'';
+  document.getElementById('e-status').value    = a.status||'Not Started';
 }
 
 document.getElementById('btn-save-edit').addEventListener('click', async ()=>{
@@ -508,7 +520,9 @@ document.getElementById('btn-save-edit').addEventListener('click', async ()=>{
     name,
     target:           document.getElementById('e-target').value.trim()||null,
     budget_allocated: parseFloat(budget),
-    expected_date:    document.getElementById('e-expected').value||null,
+    start_date:       document.getElementById('e-startdate').value||null,
+    end_date:         document.getElementById('e-enddate').value||null,
+    location:         document.getElementById('e-location').value.trim()||null,
     status,
   };
   const btn = document.getElementById('btn-save-edit');
@@ -516,7 +530,15 @@ document.getElementById('btn-save-edit').addEventListener('click', async ()=>{
   try {
     await api('PATCH',`/rest/v1/activities?id=eq.${actId}`,payload);
     // Audit log
-    const fields=[['name','Name'],['target','Target'],['budget_allocated','Budget'],['expected_date','Expected date'],['status','Status']];
+    const fields=[
+      ['name','Name'],
+      ['target','Target'],
+      ['budget_allocated','Budget'],
+      ['start_date','Start date'],
+      ['end_date','End date'],
+      ['location','Location'],
+      ['status','Status']
+    ];
     for(const [f,lbl] of fields){
       const oldVal=String(activity[f]??'');
       const newVal=String(payload[f]??'');
