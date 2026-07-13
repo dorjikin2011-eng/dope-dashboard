@@ -416,7 +416,7 @@ async function load(){
     const [actRows, sessRows, kpiRows, actListRows] = await Promise.all([
       api('GET',`/rest/v1/v_activity_detail?select=*&id=eq.${actId}`),
       api('GET',`/rest/v1/sessions?select=*&activity_id=eq.${actId}&order=session_date.asc`),
-      api('GET',`/rest/v1/kpis?select=id,title&order=title.asc`),
+      api('GET',`/rest/v1/kpis?select=id,kpi_name&order=kpi_name.asc`),
       api('GET',`/rest/v1/activities?select=id,name&order=name.asc`)
     ]);
     
@@ -424,7 +424,7 @@ async function load(){
     sessions = sessRows || [];
     
     // Populate Dynamic dropdown configurations
-    populateDropdown('e-kpi', kpiRows, 'id', 'title', activity?.kpi_id, '— None (Select if this contributes to a KPI target) —');
+    populateDropdown('e-kpi', kpiRows, 'id', 'kpi_name', activity?.kpi_id, '— None (Select if this contributes to a KPI target) —');
     populateDropdown('e-budget-from', actListRows, 'id', 'name', activity?.budget_reallocated_from, '— None (Zero Cost / Met by other agency) —');
 
     renderHeader();
