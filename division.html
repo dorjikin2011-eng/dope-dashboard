@@ -225,10 +225,12 @@
     <a href="index.html">Home</a> › <span id="bc-div">Division</span>
   </div>
 
+  <!-- DIVISION STRIP -->
   <div class="div-strip" id="div-strip">
     <div class="loading">Loading…</div>
   </div>
 
+  <!-- KPI + PLANNED ACTIVITIES -->
   <div class="toolbar">
     <h2>KPIs &amp; Planned Activities</h2>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
@@ -241,9 +243,11 @@
     <div class="loading">Loading…</div>
   </div>
 
+  <!-- AD HOC SECTION -->
   <div id="adhoc-section-wrap"></div>
 </div>
 
+<!-- ── KPI MODAL ── -->
 <div class="overlay" id="kpi-overlay">
   <div class="modal">
     <button class="modal-close" id="kpi-modal-close">✕</button>
@@ -288,6 +292,7 @@
   </div>
 </div>
 
+<!-- ── ACTIVITY MODAL (planned + ad hoc) ── -->
 <div class="overlay" id="act-overlay">
   <div class="modal">
     <button class="modal-close" id="act-modal-close">✕</button>
@@ -295,6 +300,7 @@
     <div class="modal-sub" id="act-modal-sub"></div>
     <div class="form-grid">
 
+      <!-- AD HOC TOGGLE -->
       <label class="adhoc-toggle-wrap" id="adhoc-toggle-wrap">
         <input type="checkbox" id="chk-adhoc"/>
         <div>
@@ -328,14 +334,23 @@
         </select>
       </div>
       <div>
-        <label>Expected completion</label>
-        <input id="a-expected" type="month"/>
+        <label>Start Date</label>
+        <input id="a-start-date" type="date"/>
       </div>
       <div>
+        <label>End Date</label>
+        <input id="a-end-date" type="date"/>
+      </div>
+      <div class="full">
+        <label>Location</label>
+        <input id="a-location" type="text" placeholder="e.g. Thimphu, Phuentsholing, Online"/>
+      </div>
+      <div class="full">
         <label>Created by <span class="required">*</span></label>
         <input id="a-by" type="text" placeholder="Your name"/>
       </div>
 
+      <!-- AD HOC EXTRA FIELDS (shown when toggle is on) -->
       <div class="adhoc-fields" id="adhoc-fields">
         <div class="full">
           <label>Reason / background <span class="required">*</span></label>
@@ -386,13 +401,7 @@ let divRow=null, kpis=[], activities=[], adhocActs=[], revisions=[];
 let editingKpiId=null, activeKpiId=null;
 let origKpiTarget='', origKpiBudget='';
 
-function fmt(n) { 
-  return Number(n || 0).toLocaleString('en-IN'); 
-}
-
-function fmtAmt(n) { 
-  return Number(n || 0).toFixed(3); 
-}
+function fmt(n){ return Number(n||0).toLocaleString('en-IN'); }
 function showErr(m){ const e=document.getElementById('err'); e.textContent=m; e.style.display=m?'block':'none'; }
 
 async function api(method,path,body){
@@ -452,9 +461,9 @@ function renderStrip(){
       <div class="divider"></div>
       <div class="m"><div class="l">Ad hoc activities</div><div class="v" style="color:var(--orange)">${d.total_adhoc||0}</div></div>
       <div class="divider"></div>
-      <div class="m"><div class="l">Budget (Nu.)</div><div class="v" style="color:var(--accent)">Nu. ${fmtAmt(d.total_budget)}</div></div>
-      <div class="m"><div class="l">Actual (Nu.)</div><div class="v">Nu. ${fmtAmt(d.total_actual)}</div></div>
-      <div class="m"><div class="l">Balance (Nu.)</div><div class="v ${bal<0?'over':''}">Nu. ${fmtAmt(bal)}</div></div>
+      <div class="m"><div class="l">Budget (Nu.)</div><div class="v" style="color:var(--accent)">Nu. ${fmt(d.total_budget)}</div></div>
+      <div class="m"><div class="l">Actual (Nu.)</div><div class="v">Nu. ${fmt(d.total_actual)}</div></div>
+      <div class="m"><div class="l">Balance (Nu.)</div><div class="v ${bal<0?'over':''}">Nu. ${fmt(bal)}</div></div>
     </div>
     <div class="bar-wrap">
       <div class="bar-label"><span>Budget utilisation</span><span>${pct}%</span></div>
@@ -499,9 +508,9 @@ function renderKPIs(){
           </div>
         </div>
         <div class="kpi-right">
-          <div class="kpi-budget">Nu. ${fmtAmt(k.budget_allocated)}</div>
-          <div class="kpi-budget-sub">Actual: Nu. ${fmtAmt(k.total_actual)}<br>
-            Balance: <span class="${bal<0?'over':''}">Nu. ${fmtAmt(bal)}</span></div>
+          <div class="kpi-budget">Nu. ${fmt(k.budget_allocated)}</div>
+          <div class="kpi-budget-sub">Actual: Nu. ${fmt(k.total_actual)}<br>
+            Balance: <span class="${bal<0?'over':''}">Nu. ${fmt(bal)}</span></div>
           <div class="kpi-progress">
             <div style="font-size:11px;color:var(--text-muted);text-align:right">${pct}% used</div>
             <div class="bar-track">
@@ -550,8 +559,8 @@ function renderKPIs(){
               <td style="font-size:12px;color:var(--text-muted)">${a.target||'—'}</td>
               <td>${a.session_count||0}</td>
               <td><span class="badge ${a.status}">${a.status}</span></td>
-              <td class="amount">Nu. ${fmtAmt(ab)}</td>
-              <td class="amount">Nu. ${fmtAmt(aa)}</td>
+              <td class="amount">Nu. ${fmt(ab)}</td>
+              <td class="amount">Nu. ${fmt(aa)}</td>
               <td class="amount ${abal<0?'over':''}">Nu. ${fmt(abal)}</td>
             </tr>`;
           }).join('')
@@ -581,8 +590,8 @@ function renderAdhocSection(){
             <div class="s"><div class="l">Total ad hoc</div><div class="v">${adhocActs.length}</div></div>
             <div class="s"><div class="l">Standalone (no KPI)</div><div class="v">${standalone.length}</div></div>
             <div class="s"><div class="l">Under a KPI</div><div class="v">${adhocActs.length-standalone.length}</div></div>
-            <div class="s"><div class="l">Total actual (Nu.)</div><div class="v">Nu. ${fmtAmt(totExp)}</div></div>
-            <div class="s"><div class="l">Total reallocated (Nu.)</div><div class="v">Nu. ${fmtAmt(totRealloc)}</div></div>
+            <div class="s"><div class="l">Total actual (Nu.)</div><div class="v">Nu. ${fmt(totExp)}</div></div>
+            <div class="s"><div class="l">Total reallocated (Nu.)</div><div class="v">Nu. ${fmt(totRealloc)}</div></div>
             <div class="s"><div class="l">Total participants</div><div class="v">${fmt(totP)}</div></div>
           </div>
         </div>
@@ -604,8 +613,8 @@ function renderAdhocSection(){
             <td>${a.session_count||0}</td>
             <td><span class="badge ${a.status}">${a.status}</span></td>
             <td style="font-size:12px">${a.realloc_from_name||'—'}</td>
-            <td class="amount">Nu. ${fmtAmt(a.realloc_amount)}</td>
-            <td class="amount">Nu. ${fmtAmt(a.total_actual)}</td>
+            <td class="amount">Nu. ${fmt(a.realloc_amount)}</td>
+            <td class="amount">Nu. ${fmt(a.total_actual)}</td>
             <td>${fmt(a.total_participants)}</td>
           </tr>`).join('')}
         </tbody>
@@ -687,13 +696,7 @@ document.getElementById('kpi-save').addEventListener('click',async()=>{
       if(bc) await api('POST','/rest/v1/kpi_revisions',{kpi_id:editingKpiId,field_changed:'Budget',old_value:origKpiBudget,new_value:budget,revised_by:by,revision_reason:reason});
     } else {
       const divData=await api('GET',`/rest/v1/divisions?select=id&code=eq.${divCode}`);
-      if (!divData || divData.length === 0) {
-        throw new Error(`Division code "${divCode}" was not found in the divisions table.`);
-      }
-      const createdKpi = await api('POST','/rest/v1/kpis',{division_id:divData[0].id,kpi_name:name,target,budget_allocated:parseFloat(budget),status,fy:'2026-2027',created_by:by});
-      if (!createdKpi || createdKpi.length === 0) {
-        throw new Error("KPI saved successfully, but Supabase returned an empty response. Verify that your row level security (RLS) policies permit SELECT commands for this role.");
-      }
+      await api('POST','/rest/v1/kpis',{division_id:divData[0].id,kpi_name:name,target,budget_allocated:parseFloat(budget),status,fy:'2026-2027',created_by:by});
     }
     closeKPIModal(); await load();
   } catch(e){ alert('Save failed: '+e.message); }
@@ -710,11 +713,9 @@ function populateKpiSelect(preselect){
 function populateReallocSelect(){
   const sel=document.getElementById('a-realloc-from');
   sel.innerHTML='<option value="">— Select source activity —</option>';
-  // All planned activities in this division as potential sources
-  activities.forEach(a=>{ const o=document.createElement('option'); o.value=a.id; o.textContent=`${a.name} (Nu. ${fmtAmt(+a.budget_allocated - +a.total_actual)} remaining)`; sel.appendChild(o); });
+  activities.forEach(a=>{ const o=document.createElement('option'); o.value=a.id; o.textContent=`${a.name} (Nu. ${fmt(+a.budget_allocated - +a.total_actual)} remaining)`; sel.appendChild(o); });
 }
 
-// Show remaining balance when source is selected
 document.getElementById('a-realloc-from').addEventListener('change',()=>{
   const id=parseInt(document.getElementById('a-realloc-from').value);
   const amt=parseFloat(document.getElementById('a-realloc-amt').value)||0;
@@ -731,7 +732,6 @@ document.getElementById('a-realloc-amt').addEventListener('input',()=>{
   document.getElementById('a-realloc-from').dispatchEvent(new Event('change'));
 });
 
-// Ad hoc toggle behaviour
 document.getElementById('chk-adhoc').addEventListener('change',()=>{
   const on=document.getElementById('chk-adhoc').checked;
   document.getElementById('adhoc-fields').classList.toggle('show',on);
@@ -756,10 +756,11 @@ function openAddAct(kpiId, forceAdhoc, e){
     ?'⚡ Ad hoc — unplanned activity assigned during FY 2026–2027'
     :'Planned activity under a KPI';
   document.getElementById('realloc-balance-wrap').style.display='none';
-  ['a-name','a-target','a-reason','a-realloc-amt'].forEach(id=>document.getElementById(id).value='');
+  ['a-name','a-target','a-reason','a-realloc-amt','a-location'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('a-realloc-from').value='';
   document.getElementById('a-status').value='Not Started';
-  document.getElementById('a-expected').value='';
+  document.getElementById('a-start-date').value='';
+  document.getElementById('a-end-date').value='';
   document.getElementById('a-by').value='';
   document.getElementById('act-overlay').classList.add('open');
 }
@@ -777,42 +778,41 @@ document.getElementById('act-save').addEventListener('click',async()=>{
   const reason=document.getElementById('a-reason').value.trim();
   const reallocFrom=parseInt(document.getElementById('a-realloc-from').value)||null;
   const reallocAmt=parseFloat(document.getElementById('a-realloc-amt').value)||0;
+  
   if(!name||!by){ alert('Activity name and your name are required.'); return; }
   if(isAdhoc&&!reason){ alert('Please provide a reason for the ad hoc activity.'); return; }
   if(isAdhoc&&!reallocFrom){ alert('Please select the source activity for budget reallocation.'); return; }
   if(isAdhoc&&reallocAmt<=0){ alert('Please enter the reallocated amount.'); return; }
+  
   const btn=document.getElementById('act-save');
   btn.textContent='Saving…'; btn.disabled=true;
   try {
     const divData=await api('GET',`/rest/v1/divisions?select=id&code=eq.${divCode}`);
-    if (!divData || divData.length === 0) {
-      throw new Error(`Division code "${divCode}" was not found in the divisions table.`);
-    }
-    const payload={
-      division_id:divData[0].id,
-      kpi_id:kpiId,
+    const payload = {
+      division_id: divData[0].id,
+      kpi_id: kpiId,
       name,
-      target:document.getElementById('a-target').value.trim()||null,
-      budget_allocated:isAdhoc?reallocAmt:0,
-      expected_date:document.getElementById('a-expected').value||null,
-      status:document.getElementById('a-status').value,
-      fy:'2026-2027',
-      created_by:by,
-      is_adhoc:isAdhoc,
-      adhoc_reason:isAdhoc?reason:null,
-      realloc_from_id:isAdhoc?reallocFrom:null,
-      realloc_amount:isAdhoc?reallocAmt:0,
+      target: document.getElementById('a-target').value.trim() || null,
+      budget_allocated: isAdhoc ? reallocAmt : 0,
+      start_date: document.getElementById('a-start-date').value || null,
+      end_date: document.getElementById('a-end-date').value || null,
+      location: document.getElementById('a-location').value.trim() || null,
+      status: document.getElementById('a-status').value,
+      fy: '2026-2027',
+      created_by: by,
+      is_adhoc: isAdhoc,
+      adhoc_reason: isAdhoc ? reason : null,
+      realloc_from_id: isAdhoc ? reallocFrom : null,
+      realloc_amount: isAdhoc ? reallocAmt : 0,
     };
+    
     const created=await api('POST','/rest/v1/activities',payload);
-    if (!created || created.length === 0) {
-      throw new Error("Activity saved successfully, but Supabase returned an empty response. Verify that your row level security (RLS) policies permit SELECT commands for this role.");
-    }
     const newId=created[0].id;
     await api('POST','/rest/v1/audit_log',{
       activity_id:newId,
       field_changed:isAdhoc?'Ad hoc activity created':'Activity created',
       old_value:null,
-      new_value:name+(isAdhoc?` (reallocated Nu. ${fmtAmt(reallocAmt)} from activity #${reallocFrom})`:''),
+      new_value:name+(isAdhoc?` (reallocated Nu. ${fmt(reallocAmt)} from activity #${reallocFrom})`:''),
       updated_by:by,
     });
     closeActModal(); await load();
