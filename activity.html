@@ -69,7 +69,7 @@
   .tab-panel{display:none;padding-top:20px;}
   .tab-panel.active{display:block;}
 
-  /* TOOLBAR */
+  /* NAVBAR TOOLBAR */
   .toolbar{display:flex;justify-content:space-between;align-items:center;
     margin-bottom:14px;flex-wrap:wrap;gap:8px;}
   .toolbar h2{font-size:15px;font-weight:600;margin:0;}
@@ -230,16 +230,8 @@
           <input id="e-budget" type="number" min="0"/>
         </div>
         <div>
-          <label>Location / Venue</label>
-          <input id="e-location" type="text" placeholder="e.g. Thimphu, Fieldwork, Dzongkhagwide"/>
-        </div>
-        <div>
-          <label>Start Date</label>
-          <input id="e-startdate" type="date"/>
-        </div>
-        <div>
-          <label>End Date</label>
-          <input id="e-enddate" type="date"/>
+          <label>Expected completion</label>
+          <input id="e-expected" type="month"/>
         </div>
         <div>
           <label>Status <span class="required">*</span></label>
@@ -299,13 +291,13 @@
       <div></div>
 
       <div>
-        <label>Male <span class="required">*</span></label>
-        <input id="s-male" type="number" min="0" placeholder="0"/>
+        <label>Male</label>
+        <input id="s-male" type="number" min="0" placeholder="Optional"/>
       </div>
       <div>
-        <label>Female <span class="required">*</span></label>
-        <input id="s-female" type="number" min="0" placeholder="0"/>
-        <div class="hint">Male + Female must equal Total</div>
+        <label>Female</label>
+        <input id="s-female" type="number" min="0" placeholder="Optional"/>
+        <div class="hint">Male + Female must equal Total (if provided)</div>
       </div>
 
       <div>
@@ -420,9 +412,7 @@ function renderHeader(){
       <div class="act-stat"><div class="l">Sessions</div><div class="v">${a.session_count||0}</div></div>
       <div class="act-stat"><div class="l">Total participants</div><div class="v">${fmt(a.total_participants)}</div></div>
       <div class="act-stat"><div class="l">Male / Female</div><div class="v">${fmt(a.total_male)} / ${fmt(a.total_female)}</div></div>
-      ${a.location?`<div class="act-stat"><div class="l">Location</div><div class="v">${a.location}</div></div>`:''}
-      ${a.start_date?`<div class="act-stat"><div class="l">Start Date</div><div class="v">${fmtDate(a.start_date)}</div></div>`:''}
-      ${a.end_date?`<div class="act-stat"><div class="l">End Date</div><div class="v">${fmtDate(a.end_date)}</div></div>`:''}
+      ${a.expected_date?`<div class="act-stat"><div class="l">Expected completion</div><div class="v">${a.expected_date.slice(0,7)}</div></div>`:''}
     </div>
     <div class="bar-track" style="margin-top:14px">
       <div class="bar-fill" style="width:${pct}%"></div>
@@ -498,13 +488,11 @@ async function loadLog(){
 function populateEditForm(){
   const a = activity;
   if(!a) return;
-  document.getElementById('e-name').value      = a.name||'';
-  document.getElementById('e-target').value    = a.target||'';
-  document.getElementById('e-budget').value    = a.budget_allocated||'';
-  document.getElementById('e-location').value  = a.location||'';
-  document.getElementById('e-startdate').value = a.start_date||'';
-  document.getElementById('e-enddate').value   = a.end_date||'';
-  document.getElementById('e-status').value    = a.status||'Not Started';
+  document.getElementById('e-name').value     = a.name||'';
+  document.getElementById('e-target').value   = a.target||'';
+  document.getElementById('e-budget').value   = a.budget_allocated||'';
+  document.getElementById('e-expected').value = a.expected_date?a.expected_date.slice(0,7):'';
+  document.getElementById('e-status').value   = a.status||'Not Started';
 }
 
 document.getElementById('btn-save-edit').addEventListener('click', async ()=>{
@@ -520,9 +508,7 @@ document.getElementById('btn-save-edit').addEventListener('click', async ()=>{
     name,
     target:           document.getElementById('e-target').value.trim()||null,
     budget_allocated: parseFloat(budget),
-    start_date:       document.getElementById('e-startdate').value||null,
-    end_date:         document.getElementById('e-enddate').value||null,
-    location:         document.getElementById('e-location').value.trim()||null,
+    expected_date:    document.getElementById('e-expected').value||null,
     status,
   };
   const btn = document.getElementById('btn-save-edit');
@@ -530,15 +516,7 @@ document.getElementById('btn-save-edit').addEventListener('click', async ()=>{
   try {
     await api('PATCH',`/rest/v1/activities?id=eq.${actId}`,payload);
     // Audit log
-    const fields=[
-      ['name','Name'],
-      ['target','Target'],
-      ['budget_allocated','Budget'],
-      ['start_date','Start date'],
-      ['end_date','End date'],
-      ['location','Location'],
-      ['status','Status']
-    ];
+    const fields=[['name','Name'],['target','Target'],['budget_allocated','Budget'],['expected_date','Expected date'],['status','Status']];
     for(const [f,lbl] of fields){
       const oldVal=String(activity[f]??'');
       const newVal=String(payload[f]??'');
@@ -568,8 +546,8 @@ function openSessionModal(sess){
   document.getElementById('s-place').value    = sess?.place_address||'';
   document.getElementById('s-audience').value = sess?.target_audience||'';
   document.getElementById('s-total').value    = sess?.participants_total||'';
-  document.getElementById('s-male').value     = sess?.participants_male||'';
-  document.getElementById('s-female').value   = sess?.participants_female||'';
+  document.getElementById('s-male').value     = sess?.participants_male!==undefined && sess?.participants_male!==null ? sess.participants_male : '';
+  document.getElementById('s-female').value   = sess?.participants_female!==undefined && sess?.participants_female!==null ? sess.participants_female : '';
   document.getElementById('s-exp').value      = sess?.expenditure||'';
   document.getElementById('s-by').value       = sess?.entered_by||'';
   document.getElementById('s-remarks').value  = sess?.remarks||'';
@@ -584,29 +562,43 @@ document.getElementById('btn-cancel').addEventListener('click',closeModal);
 document.getElementById('modal-close').addEventListener('click',closeModal);
 document.getElementById('overlay').addEventListener('click',e=>{ if(e.target===e.currentTarget) closeModal(); });
 
-// Auto-compute total from male+female
+// Auto-compute total from male+female (only if values are typed out)
 ['s-male','s-female'].forEach(id=>{
   document.getElementById(id).addEventListener('input',()=>{
-    const m=+document.getElementById('s-male').value||0;
-    const f=+document.getElementById('s-female').value||0;
-    document.getElementById('s-total').value = m+f;
+    const mStr = document.getElementById('s-male').value.trim();
+    const fStr = document.getElementById('s-female').value.trim();
+    if (mStr !== '' || fStr !== '') {
+      const m = parseInt(mStr) || 0;
+      const f = parseInt(fStr) || 0;
+      document.getElementById('s-total').value = m + f;
+    }
   });
 });
 
 // ── SAVE SESSION ──
 document.getElementById('btn-save-session').addEventListener('click', async ()=>{
-  const date   = document.getElementById('s-date').value;
-  const total  = parseInt(document.getElementById('s-total').value)||0;
-  const male   = parseInt(document.getElementById('s-male').value)||0;
-  const female = parseInt(document.getElementById('s-female').value)||0;
-  const exp    = parseFloat(document.getElementById('s-exp').value)||0;
-  const by     = document.getElementById('s-by').value.trim();
+  const date      = document.getElementById('s-date').value;
+  const total     = parseInt(document.getElementById('s-total').value)||0;
+  const maleStr   = document.getElementById('s-male').value.trim();
+  const femaleStr = document.getElementById('s-female').value.trim();
+  const exp       = parseFloat(document.getElementById('s-exp').value)||0;
+  const by        = document.getElementById('s-by').value.trim();
 
-  if(!date)        { showModalErr('Date is required.'); return; }
-  if(!by)          { showModalErr('Please enter your name.'); return; }
-  if(total<=0)     { showModalErr('Total participants must be greater than 0.'); return; }
-  if(male+female !== total){ showModalErr(`Male (${male}) + Female (${female}) must equal Total (${total}).`); return; }
-  if(exp<0)        { showModalErr('Expenditure cannot be negative.'); return; }
+  if(!date)    { showModalErr('Date is required.'); return; }
+  if(!by)      { showModalErr('Please enter your name.'); return; }
+  if(total<=0) { showModalErr('Total participants must be greater than 0.'); return; }
+  
+  // SMART BREAKDOWN VALIDATION: Only checks if at least one gender input contains text
+  if(maleStr !== '' || femaleStr !== '') {
+    const male   = parseInt(maleStr) || 0;
+    const female = parseInt(femaleStr) || 0;
+    if(male + female !== total){ 
+      showModalErr(`Male (${male}) + Female (${female}) must equal Total (${total}).\n\nLeave both completely empty if demographic data is unavailable.`); 
+      return; 
+    }
+  }
+
+  if(exp<0) { showModalErr('Expenditure cannot be negative.'); return; }
 
   const payload = {
     activity_id:         +actId,
@@ -616,8 +608,8 @@ document.getElementById('btn-save-session').addEventListener('click', async ()=>
     place_address:       document.getElementById('s-place').value.trim()||null,
     target_audience:     document.getElementById('s-audience').value.trim()||null,
     participants_total:  total,
-    participants_male:   male,
-    participants_female: female,
+    participants_male:   maleStr !== '' ? parseInt(maleStr) : null,   // Saves cleanly as NULL if omitted
+    participants_female: femaleStr !== '' ? parseInt(femaleStr) : null, // Saves cleanly as NULL if omitted
     expenditure:         exp,
     remarks:             document.getElementById('s-remarks').value.trim()||null,
     entered_by:          by,
