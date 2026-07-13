@@ -264,7 +264,7 @@
       </div>
       <div>
         <label>Budget allocated (Nu.) <span class="required">*</span></label>
-        <input id="k-budget" type="number" min="0" placeholder="0"/>
+        <input id="k-budget" type="number" min="0" step="0.001" placeholder="0.000"/>
       </div>
       <div>
         <label>Status <span class="required">*</span></label>
@@ -357,14 +357,14 @@
           <textarea id="a-reason" placeholder="e.g. Assigned by Ministry of Finance on short notice for staff sensitisation programme…"></textarea>
         </div>
         <div>
-          <label>Budget reallocated from <span class="required">*</span></label>
+          <label>Budget reallocated from</label>
           <select id="a-realloc-from">
-            <option value="">— Select source activity —</option>
+            <option value="">— None (Zero Cost / Met by other agency) —</option>
           </select>
         </div>
         <div>
-          <label>Amount reallocated (Nu.) <span class="required">*</span></label>
-          <input id="a-realloc-amt" type="number" min="0" placeholder="0"/>
+          <label>Amount reallocated (Nu.)</label>
+          <input id="a-realloc-amt" type="number" min="0" step="0.001" value="0" placeholder="0.000"/>
         </div>
         <div class="full" id="realloc-balance-wrap" style="display:none">
           <div style="font-size:12px;color:var(--text-muted);background:#fff;
@@ -401,7 +401,13 @@ let divRow=null, kpis=[], activities=[], adhocActs=[], revisions=[];
 let editingKpiId=null, activeKpiId=null;
 let origKpiTarget='', origKpiBudget='';
 
-function fmt(n){ return Number(n||0).toLocaleString('en-IN'); }
+// Function modified to render to exactly 3 decimal places
+function fmt(n){ 
+  return Number(n||0).toLocaleString('en-IN', {
+    minimumFractionDigits: 3,
+    maximumFractionDigits: 3
+  }); 
+}
 function showErr(m){ const e=document.getElementById('err'); e.textContent=m; e.style.display=m?'block':'none'; }
 
 async function api(method,path,body){
@@ -531,7 +537,7 @@ function renderKPIs(){
             <span class="badge ${k.status}">${k.status}</span>
             <span style="font-size:11px;color:var(--text-muted)">${planned.length} planned</span>
             ${adhoc.length?`<span class="badge adhoc">⚡ ${adhoc.length} ad hoc</span>`:''}
-            <span style="font-size:11px;color:var(--text-muted)">${fmt(k.total_sessions)} sessions · ${fmt(k.total_participants)} participants</span>
+            <span style="font-size:11px;color:var(--text-muted)">${Number(k.total_sessions||0).toLocaleString('en-IN')} sessions · ${Number(k.total_participants||0).toLocaleString('en-IN')} participants</span>
           </div>
         </div>
         <div class="kpi-right">
@@ -584,7 +590,7 @@ function renderKPIs(){
               <td>${isAh?`<span class="badge adhoc">⚡ Ad hoc</span>`:'<span style="font-size:11px;color:var(--text-muted)">Planned</span>'}</td>
               <td style="font-weight:500">${a.name}</td>
               <td style="font-size:12px;color:var(--text-muted)">${a.target||'—'}</td>
-              <td>${a.session_count||0}</td>
+              <td>${Number(a.session_count||0).toLocaleString('en-IN')}</td>
               <td><span class="badge ${a.status}">${a.status}</span></td>
               <td class="amount">Nu. ${fmt(ab)}</td>
               <td class="amount">Nu. ${fmt(aa)}</td>
@@ -619,7 +625,7 @@ function renderAdhocSection(){
             <div class="s"><div class="l">Under a KPI</div><div class="v">${adhocActs.length-standalone.length}</div></div>
             <div class="s"><div class="l">Total actual (Nu.)</div><div class="v">Nu. ${fmt(totExp)}</div></div>
             <div class="s"><div class="l">Total reallocated (Nu.)</div><div class="v">Nu. ${fmt(totRealloc)}</div></div>
-            <div class="s"><div class="l">Total participants</div><div class="v">${fmt(totP)}</div></div>
+            <div class="s"><div class="l">Total participants</div><div class="v">${Number(totP).toLocaleString('en-IN')}</div></div>
           </div>
         </div>
       </div>
@@ -637,12 +643,12 @@ function renderAdhocSection(){
             <td>${i+1}</td>
             <td style="font-weight:500">${a.name}</td>
             <td style="font-size:12px;color:var(--text-muted);max-width:180px;white-space:normal">${a.adhoc_reason||'—'}</td>
-            <td>${a.session_count||0}</td>
+            <td>${Number(a.session_count||0).toLocaleString('en-IN')}</td>
             <td><span class="badge ${a.status}">${a.status}</span></td>
             <td style="font-size:12px">${a.realloc_from_name||'—'}</td>
             <td class="amount">Nu. ${fmt(a.realloc_amount)}</td>
             <td class="amount">Nu. ${fmt(a.total_actual)}</td>
-            <td>${fmt(a.total_participants)}</td>
+            <td>${Number(a.total_participants||0).toLocaleString('en-IN')}</td>
           </tr>`).join('')}
         </tbody>
       </table></div>`
@@ -739,7 +745,7 @@ function populateKpiSelect(preselect){
 
 function populateReallocSelect(){
   const sel=document.getElementById('a-realloc-from');
-  sel.innerHTML='<option value="">— Select source activity —</option>';
+  sel.innerHTML='<option value="">— None (Zero Cost / Met by other agency) —</option>';
   activities.forEach(a=>{ const o=document.createElement('option'); o.value=a.id; o.textContent=`${a.name} (Nu. ${fmt(+a.budget_allocated - +a.total_actual)} remaining)`; sel.appendChild(o); });
 }
 
@@ -783,7 +789,8 @@ function openAddAct(kpiId, forceAdhoc, e){
     ?'⚡ Ad hoc — unplanned activity assigned during FY 2026–2027'
     :'Planned activity under a KPI';
   document.getElementById('realloc-balance-wrap').style.display='none';
-  ['a-name','a-target','a-reason','a-realloc-amt','a-location'].forEach(id=>document.getElementById(id).value='');
+  ['a-name','a-target','a-reason','a-location'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('a-realloc-amt').value='0';
   document.getElementById('a-realloc-from').value='';
   document.getElementById('a-status').value='Not Started';
   document.getElementById('a-start-date').value='';
@@ -808,8 +815,6 @@ document.getElementById('act-save').addEventListener('click',async()=>{
   
   if(!name||!by){ alert('Activity name and your name are required.'); return; }
   if(isAdhoc&&!reason){ alert('Please provide a reason for the ad hoc activity.'); return; }
-  if(isAdhoc&&!reallocFrom){ alert('Please select the source activity for budget reallocation.'); return; }
-  if(isAdhoc&&reallocAmt<=0){ alert('Please enter the reallocated amount.'); return; }
   
   const btn=document.getElementById('act-save');
   btn.textContent='Saving…'; btn.disabled=true;
