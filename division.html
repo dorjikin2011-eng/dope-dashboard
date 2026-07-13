@@ -421,7 +421,7 @@ async function api(method,path,body){
 async function load(){
   if(!divCode){ document.getElementById('div-strip').innerHTML='<div class="err-box">No division specified.</div>'; return; }
   try {
-    // 1. Fetch the division summary first to resolve the string code (e.g., 'ED') to its numeric division_id
+    // 1. Fetch the division summary view for UI rendering
     const divRows = await api('GET', `/rest/v1/v_division_summary?select=*&code=eq.${divCode}`);
     divRow = divRows[0];
     
@@ -430,11 +430,25 @@ async function load(){
       return;
     }
 
-    // 2. Fetch the remaining datasets using the precise internal division_id column
+    // 2. Safely resolve the internal numeric ID. If the view hiddenized it, pull it from the core divisions table.
+    let numericId = divRow.id || divRow.division_id;
+    if (!numericId) {
+      const coreDiv = await api('GET', `/rest/v1/divisions?select=id&code=eq.${divCode}`);
+      if (coreDiv && coreDiv[0]) {
+        numericId = coreDiv[0].id;
+      }
+    }
+
+    if (!numericId) {
+      showErr(`Could not resolve internal database ID for division: ${divCode}`);
+      return;
+    }
+
+    // 3. Fetch remaining datasets using the resolved internal integer ID safely
     const [kpiRows, actRows, adhocRows, revRows] = await Promise.all([
       api('GET', `/rest/v1/v_kpi_summary?select=*&division_code=eq.${divCode}&order=created_at.asc`),
-      api('GET', `/rest/v1/v_activity_detail?select=*&division_id=eq.${divRow.id}&is_adhoc=eq.false&order=created_at.asc`),
-      api('GET', `/rest/v1/v_adhoc_activities?select=*&division_id=eq.${divRow.id}&order=created_at.asc`),
+      api('GET', `/rest/v1/v_activity_detail?select=*&division_id=eq.${numericId}&is_adhoc=eq.false&order=created_at.asc`),
+      api('GET', `/rest/v1/v_adhoc_activities?select=*&division_id=eq.${numericId}&order=created_at.asc`),
       api('GET', `/rest/v1/kpi_revisions?select=*&order=revised_at.desc`),
     ]);
 
