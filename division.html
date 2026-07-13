@@ -314,7 +314,7 @@
         <input id="a-name" type="text" placeholder="e.g. Ad hoc workshop — Ministry request"/>
       </div>
       <div class="full">
-        <label>Activity target / description</label>
+        <label>Activity target / description <span class="required">*</span></label>
         <input id="a-target" type="text" placeholder="e.g. Sensitise 50 staff on asset declaration"/>
       </div>
       <div>
@@ -342,7 +342,7 @@
         <input id="a-end-date" type="date"/>
       </div>
       <div class="full">
-        <label>Location</label>
+        <label>Location <span class="required">*</span></label>
         <input id="a-location" type="text" placeholder="e.g. Thimphu, Phuentsholing, Online"/>
       </div>
       <div class="full">
@@ -809,26 +809,35 @@ document.getElementById('act-save').addEventListener('click', async () => {
   const reallocFrom = parseInt(document.getElementById('a-realloc-from').value) || null;
   const reallocAmt = parseFloat(document.getElementById('a-realloc-amt').value) || 0;
   
+  const targetVal = document.getElementById('a-target').value.trim();
+  const locationVal = document.getElementById('a-location').value.trim();
+  const startDateVal = document.getElementById('a-start-date').value;
+  const endDateVal = document.getElementById('a-end-date').value;
+
   if (!name || !by) { alert('Activity name and your name are required.'); return; }
   if (isAdhoc && !reason) { alert('Please provide a reason for the ad hoc activity.'); return; }
+  if (!targetVal || !locationVal) { 
+    alert('Database RLS Policy Requirement: Both "Activity target / description" and "Location" fields must be completed.'); 
+    return; 
+  }
   
   const btn = document.getElementById('act-save');
   btn.textContent = 'Saving…'; btn.disabled = true;
   try {
     const divData = await api('GET', `/rest/v1/divisions?select=id,code&code=eq.${divCode}`);
     if (!divData || !divData.length) {
-      throw new Error("Division structural validation failed. Check your division assignment parameters.");
+      throw new Error(`Division structural validation failed. Code "${divCode}" matches no active context.`);
     }
 
     const payload = {
       division_id: divData[0].id,
       kpi_id: kpiId,
       name,
-      target: document.getElementById('a-target').value.trim() || 'Unspecified Target',
+      target: targetVal,
       budget_allocated: isAdhoc ? reallocAmt : 0.000, 
-      start_date: document.getElementById('a-start-date').value || new Date().toISOString().split('T')[0],
-      end_date: document.getElementById('a-end-date').value || null,
-      location: document.getElementById('a-location').value.trim() || 'Main Office',
+      start_date: startDateVal || new Date().toISOString().split('T')[0],
+      end_date: endDateVal || null,
+      location: locationVal,
       status: document.getElementById('a-status').value,
       fy: '2026-2027',
       created_by: by,
@@ -856,7 +865,7 @@ document.getElementById('act-save').addEventListener('click', async () => {
   } catch (e) { 
     console.error(e);
     alert('Save failed: ' + (e.message.includes("row-level security") 
-      ? "Database Policy Violation (RLS). Please ensure target/location fields are completed or you have permission to write to this division context." 
+      ? "Database Policy Violation (RLS). Verify your network credentials have insert privileges for division code: " + divCode
       : e.message)); 
   } finally { 
     btn.textContent = 'Save activity'; 
