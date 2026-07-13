@@ -333,7 +333,8 @@ let sessions = [];
 let editingSessionId = null;
 
 // ── HELPERS ──
-function fmt(n){ return Number(n || 0).toFixed(3); }
+function fmtAmt(n){ return Number(n || 0).toFixed(3); }
+function fmtCount(n){ return n !== null && n !== undefined ? Math.round(Number(n)).toString() : '—'; }
 function fmtDate(d){ if(!d) return '—'; const dt=new Date(d); return dt.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}); }
 function fmtTs(ts){ if(!ts) return '—'; const d=new Date(ts); return d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})+' '+d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}); }
 function showSessErr(m){ const e=document.getElementById('sess-err'); e.textContent=m; e.style.display=m?'block':'none'; }
@@ -395,6 +396,12 @@ function renderHeader(){
   const budget  = +a.budget_allocated||0;
   const balance = budget-actual;
   const pct     = budget>0?Math.min(Math.round(actual/budget*100),100):0;
+  
+  // Conditionally format breakdown text for top view summary if they exist
+  const hasMale = a.total_male !== null && a.total_male !== undefined && +a.total_male > 0;
+  const hasFemale = a.total_female !== null && a.total_female !== undefined && +a.total_female > 0;
+  const genderBreakdownStr = (hasMale || hasFemale) ? `${fmtCount(a.total_male)} / ${fmtCount(a.total_female)}` : '—';
+
   document.getElementById('act-header').innerHTML = `
     <div class="top">
       <div>
@@ -406,12 +413,12 @@ function renderHeader(){
       </div>
     </div>
     <div class="act-stats">
-      <div class="act-stat"><div class="l">Budget (Nu.)</div><div class="v">Nu. ${fmt(budget)}</div></div>
-      <div class="act-stat"><div class="l">Actual spent (Nu.)</div><div class="v">Nu. ${fmt(actual)}</div></div>
-      <div class="act-stat"><div class="l">Balance (Nu.)</div><div class="v ${balance<0?'over':''}">Nu. ${fmt(balance)}</div></div>
-      <div class="act-stat"><div class="l">Sessions</div><div class="v">${a.session_count||0}</div></div>
-      <div class="act-stat"><div class="l">Total participants</div><div class="v">${fmt(a.total_participants)}</div></div>
-      <div class="act-stat"><div class="l">Male / Female</div><div class="v">${fmt(a.total_male)} / ${fmt(a.total_female)}</div></div>
+      <div class="act-stat"><div class="l">Budget (Nu.)</div><div class="v">Nu. ${fmtAmt(budget)}</div></div>
+      <div class="act-stat"><div class="l">Actual spent (Nu.)</div><div class="v">Nu. ${fmtAmt(actual)}</div></div>
+      <div class="act-stat"><div class="l">Balance (Nu.)</div><div class="v ${balance<0?'over':''}">Nu. ${fmtAmt(balance)}</div></div>
+      <div class="act-stat"><div class="l">Sessions</div><div class="v">${fmtCount(a.session_count || 0)}</div></div>
+      <div class="act-stat"><div class="l">Total participants</div><div class="v">${fmtCount(a.total_participants)}</div></div>
+      <div class="act-stat"><div class="l">Male / Female</div><div class="v">${genderBreakdownStr}</div></div>
       ${a.expected_date?`<div class="act-stat"><div class="l">Expected completion</div><div class="v">${a.expected_date.slice(0,7)}</div></div>`:''}
     </div>
     <div class="bar-track" style="margin-top:14px">
@@ -428,7 +435,15 @@ function renderSessions(){
     return;
   }
   let totM=0,totF=0,totP=0,totExp=0;
-  sessions.forEach(s=>{ totM+=+s.participants_male; totF+=+s.participants_female; totP+=+s.participants_total; totExp+=+s.expenditure; });
+  let hasAnyGenderData = false;
+
+  sessions.forEach(s=>{ 
+    if (s.participants_male !== null && s.participants_male !== undefined) { totM+=+s.participants_male; hasAnyGenderData = true; }
+    if (s.participants_female !== null && s.participants_female !== undefined) { totF+=+s.participants_female; hasAnyGenderData = true; }
+    totP+=+s.participants_total; 
+    totExp+=+s.expenditure; 
+  });
+
   tb.innerHTML = sessions.map((s,i)=>`
     <tr data-id="${s.id}">
       <td>${i+1}</td>
@@ -436,19 +451,19 @@ function renderSessions(){
       <td>${[s.venue,s.place_address].filter(Boolean).join(', ')||'—'}</td>
       <td>${s.target_audience||'—'}</td>
       <td>${s.duration||'—'}</td>
-      <td>${fmt(s.participants_male)}</td>
-      <td>${fmt(s.participants_female)}</td>
-      <td><strong>${fmt(s.participants_total)}</strong></td>
-      <td class="amount">Nu. ${fmt(s.expenditure)}</td>
+      <td>${fmtCount(s.participants_male)}</td>
+      <td>${fmtCount(s.participants_female)}</td>
+      <td><strong>${fmtCount(s.participants_total)}</strong></td>
+      <td class="amount">Nu. ${fmtAmt(s.expenditure)}</td>
       <td style="max-width:160px;white-space:normal">${s.remarks||'—'}</td>
       <td>${s.entered_by}</td>
     </tr>`).join('')+`
     <tr class="totals-row">
       <td colspan="5">Totals</td>
-      <td>${fmt(totM)}</td>
-      <td>${fmt(totF)}</td>
-      <td>${fmt(totP)}</td>
-      <td class="amount">Nu. ${fmt(totExp)}</td>
+      <td>${hasAnyGenderData ? fmtCount(totM) : '—'}</td>
+      <td>${hasAnyGenderData ? fmtCount(totF) : '—'}</td>
+      <td>${fmtCount(totP)}</td>
+      <td class="amount">Nu. ${fmtAmt(totExp)}</td>
       <td colspan="2"></td>
     </tr>`;
 
@@ -608,8 +623,8 @@ document.getElementById('btn-save-session').addEventListener('click', async ()=>
     place_address:       document.getElementById('s-place').value.trim()||null,
     target_audience:     document.getElementById('s-audience').value.trim()||null,
     participants_total:  total,
-    participants_male:   maleStr !== '' ? parseInt(maleStr) : null,   // Saves cleanly as NULL if omitted
-    participants_female: femaleStr !== '' ? parseInt(femaleStr) : null, // Saves cleanly as NULL if omitted
+    participants_male:   maleStr !== '' ? parseInt(maleStr) : null,   
+    participants_female: femaleStr !== '' ? parseInt(femaleStr) : null, 
     expenditure:         exp,
     remarks:             document.getElementById('s-remarks').value.trim()||null,
     entered_by:          by,
@@ -637,7 +652,7 @@ document.getElementById('btn-save-session').addEventListener('click', async ()=>
         session_id:   created[0].id,
         field_changed:'Session added',
         old_value:    null,
-        new_value:    `Session on ${fmtDate(date)} · ${total} participants · Nu. ${fmt(exp)}`,
+        new_value:    `Session on ${fmtDate(date)} · ${total} participants · Nu. ${fmtAmt(exp)}`,
         updated_by:   by,
       });
     }
