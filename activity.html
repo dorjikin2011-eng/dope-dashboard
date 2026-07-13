@@ -128,6 +128,18 @@
   .hint{font-size:11px;color:var(--text-muted);margin-top:3px;}
   .form-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:20px;}
 
+  /* HIGHLIGHT CONTAINER BOX FOR REASON & BUDGET INFO */
+  .highlight-box {
+    background: #FFFDF9;
+    border: 1px solid #F3E6CD;
+    border-radius: 8px;
+    padding: 16px;
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+
   /* SESSION MODAL */
   .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);
     z-index:200;align-items:center;justify-content:center;padding:16px;}
@@ -141,8 +153,8 @@
   .inline-err{color:var(--red);font-size:12px;margin-top:14px;display:none;}
 
   @media(max-width:660px){
-    .form-grid{grid-template-columns:1fr;}
-    .form-grid .full{grid-column:1;}
+    .form-grid, .highlight-box{grid-template-columns:1fr;}
+    .form-grid .full, .highlight-box{grid-column:1;}
     .act-stats{gap:14px;}
   }
 </style>
@@ -219,19 +231,18 @@
       <div class="form-grid">
         <div class="full">
           <label>Activity name <span class="required">*</span></label>
-          <input id="e-name" type="text"/>
+          <input id="e-name" type="text" placeholder="e.g. Ad hoc workshop — Ministry request"/>
         </div>
         <div class="full">
-          <label>Performance target</label>
-          <input id="e-target" type="text"/>
+          <label>Activity target / description <span class="required">*</span></label>
+          <input id="e-target" type="text" placeholder="e.g. Sensitise 50 staff on asset declaration"/>
         </div>
         <div>
-          <label>Budget allocated (Nu.) <span class="required">*</span></label>
-          <input id="e-budget" type="number" min="0"/>
-        </div>
-        <div>
-          <label>Expected completion</label>
-          <input id="e-expected" type="month"/>
+          <label>Under KPI</label>
+          <select id="e-kpi">
+            <option value="">— None (Select if this contributes to a KPI target) —</option>
+          </select>
+          <div class="hint" style="color: var(--amber)">Optional for ad hoc — select if this contributes to a KPI target</div>
         </div>
         <div>
           <label>Status <span class="required">*</span></label>
@@ -243,9 +254,40 @@
           </select>
         </div>
         <div>
-          <label>Updated by <span class="required">*</span></label>
+          <label>Start Date</label>
+          <input id="e-start" type="date"/>
+        </div>
+        <div>
+          <label>End Date</label>
+          <input id="e-end" type="date"/>
+        </div>
+        <div class="full">
+          <label>Location <span class="required">*</span></label>
+          <input id="e-location" type="text" placeholder="e.g. Thimphu, Phuentsholing, Online"/>
+        </div>
+        <div class="full">
+          <label>Created by / Updated by <span class="required">*</span></label>
           <input id="e-updatedby" type="text" placeholder="Your name"/>
         </div>
+
+        <!-- REASON & BUDGET ACCORDION AREA -->
+        <div class="highlight-box">
+          <div class="full">
+            <label>Reason / background <span class="required">*</span></label>
+            <textarea id="e-reason" placeholder="e.g. Assigned by Ministry of Finance on short notice for staff sensitisation programme..."></textarea>
+          </div>
+          <div>
+            <label>Budget reallocated from</label>
+            <select id="e-budget-from">
+              <option value="">— None (Zero Cost / Met by other agency) —</option>
+            </select>
+          </div>
+          <div>
+            <label>Amount reallocated (Nu.)</label>
+            <input id="e-budget-amount" type="number" min="0" value="0" step="0.001"/>
+          </div>
+        </div>
+
       </div>
       <div class="form-actions">
         <button class="btn btn-primary" id="btn-save-edit">Save changes</button>
@@ -370,17 +412,40 @@ document.querySelectorAll('.tab').forEach(tab=>{
 async function load(){
   if(!actId){ document.getElementById('act-header').innerHTML='<div class="err-box">No activity specified.</div>'; return; }
   try {
-    const [actRows, sessRows] = await Promise.all([
+    // Parallel pull core layout data, sessions data, dynamic list references
+    const [actRows, sessRows, kpiRows, actListRows] = await Promise.all([
       api('GET',`/rest/v1/v_activity_detail?select=*&id=eq.${actId}`),
-      api('GET',`/rest/v1/sessions?select=*&activity_id=eq.${actId}&order=session_date.asc`)
+      api('GET',`/rest/v1/sessions?select=*&activity_id=eq.${actId}&order=session_date.asc`),
+      api('GET',`/rest/v1/kpis?select=id,title&order=title.asc`),
+      api('GET',`/rest/v1/activities?select=id,name&order=name.asc`)
     ]);
+    
     activity = actRows[0];
     sessions = sessRows || [];
+    
+    // Populate Dynamic dropdown configurations
+    populateDropdown('e-kpi', kpiRows, 'id', 'title', activity?.kpi_id, '— None (Select if this contributes to a KPI target) —');
+    populateDropdown('e-budget-from', actListRows, 'id', 'name', activity?.budget_reallocated_from, '— None (Zero Cost / Met by other agency) —');
+
     renderHeader();
     renderSessions();
     populateEditForm();
   } catch(e){
-    showSessErr('Error loading: '+e.message);
+    showSessErr('Error loading form dependencies: '+e.message);
+  }
+}
+
+function populateDropdown(elemId, data, valField, textField, selectedVal, defaultTxt) {
+  const sel = document.getElementById(elemId);
+  sel.innerHTML = `<option value="">${defaultTxt}</option>`;
+  if(data) {
+    data.forEach(item => {
+      const opt = document.createElement('option');
+      opt.value = item[valField];
+      opt.textContent = item[textField];
+      if(String(item[valField]) === String(selectedVal)) opt.selected = true;
+      sel.appendChild(opt);
+    });
   }
 }
 
@@ -392,12 +457,13 @@ function renderHeader(){
   document.getElementById('bc-div').textContent = a.division_code;
   document.getElementById('bc-div').href = `division.html?div=${a.division_code}`;
   document.getElementById('bc-act').textContent = a.name;
+  
+  // Total actual computation safely computed from view aggregates
   const actual  = +a.total_actual||0;
-  const budget  = +a.budget_allocated||0;
+  const budget  = +a.budget_allocated||+a.amount_reallocated||0;
   const balance = budget-actual;
   const pct     = budget>0?Math.min(Math.round(actual/budget*100),100):0;
   
-  // Conditionally format breakdown text for top view summary if they exist
   const hasMale = a.total_male !== null && a.total_male !== undefined && +a.total_male > 0;
   const hasFemale = a.total_female !== null && a.total_female !== undefined && +a.total_female > 0;
   const genderBreakdownStr = (hasMale || hasFemale) ? `${fmtCount(a.total_male)} / ${fmtCount(a.total_female)}` : '—';
@@ -419,7 +485,7 @@ function renderHeader(){
       <div class="act-stat"><div class="l">Sessions</div><div class="v">${fmtCount(a.session_count || 0)}</div></div>
       <div class="act-stat"><div class="l">Total participants</div><div class="v">${fmtCount(a.total_participants)}</div></div>
       <div class="act-stat"><div class="l">Male / Female</div><div class="v">${genderBreakdownStr}</div></div>
-      ${a.expected_date?`<div class="act-stat"><div class="l">Expected completion</div><div class="v">${a.expected_date.slice(0,7)}</div></div>`:''}
+      ${a.start_date?`<div class="act-stat"><div class="l">Timeline</div><div class="v" style="font-size:12px">${fmtDate(a.start_date)} - ${fmtDate(a.end_date)}</div></div>`:''}
     </div>
     <div class="bar-track" style="margin-top:14px">
       <div class="bar-fill" style="width:${pct}%"></div>
@@ -499,43 +565,74 @@ async function loadLog(){
   }
 }
 
-// ── EDIT ACTIVITY FORM ──
+// ── EDIT ACTIVITY FORM MAPPINGS ──
 function populateEditForm(){
   const a = activity;
   if(!a) return;
-  document.getElementById('e-name').value     = a.name||'';
-  document.getElementById('e-target').value   = a.target||'';
-  document.getElementById('e-budget').value   = a.budget_allocated||'';
-  document.getElementById('e-expected').value = a.expected_date?a.expected_date.slice(0,7):'';
-  document.getElementById('e-status').value   = a.status||'Not Started';
+  document.getElementById('e-name').value          = a.name||'';
+  document.getElementById('e-target').value        = a.target||'';
+  document.getElementById('e-status').value        = a.status||'Not Started';
+  document.getElementById('e-start').value         = a.start_date||'';
+  document.getElementById('e-end').value           = a.end_date||'';
+  document.getElementById('e-location').value      = a.location||'';
+  document.getElementById('e-reason').value        = a.reason_background||'';
+  document.getElementById('e-budget-amount').value = a.amount_reallocated||0;
+  document.getElementById('e-updatedby').value     = '';
 }
 
 document.getElementById('btn-save-edit').addEventListener('click', async ()=>{
   const name      = document.getElementById('e-name').value.trim();
-  const budget    = document.getElementById('e-budget').value.trim();
+  const target    = document.getElementById('e-target').value.trim();
+  const location  = document.getElementById('e-location').value.trim();
+  const reason    = document.getElementById('e-reason').value.trim();
   const updatedby = document.getElementById('e-updatedby').value.trim();
-  const status    = document.getElementById('e-status').value;
+  
+  const kpiVal    = document.getElementById('e-kpi').value;
+  const bFromVal  = document.getElementById('e-budget-from').value;
+  const bAmtVal   = parseFloat(document.getElementById('e-budget-amount').value)||0;
+
   if(!name)      { alert('Activity name is required.'); return; }
-  if(!budget)    { alert('Budget is required.'); return; }
-  if(!updatedby) { alert('Please enter your name.'); return; }
+  if(!target)    { alert('Activity target/description is required.'); return; }
+  if(!location)  { alert('Location is required.'); return; }
+  if(!reason)    { alert('Reason / background context is required.'); return; }
+  if(!updatedby) { alert('Please enter your name in the Created/Updated field.'); return; }
 
   const payload = {
     name,
-    target:           document.getElementById('e-target').value.trim()||null,
-    budget_allocated: parseFloat(budget),
-    expected_date:    document.getElementById('e-expected').value||null,
-    status,
+    target,
+    kpi_id:                   kpiVal ? parseInt(kpiVal) : null,
+    status:                   document.getElementById('e-status').value,
+    start_date:               document.getElementById('e-start').value || null,
+    end_date:                 document.getElementById('e-end').value || null,
+    location,
+    reason_background:        reason,
+    budget_reallocated_from:  bFromVal ? parseInt(bFromVal) : null,
+    amount_reallocated:       bAmtVal
   };
+
   const btn = document.getElementById('btn-save-edit');
   btn.textContent='Saving…'; btn.disabled=true;
+  
   try {
-    await api('PATCH',`/rest/v1/activities?id=eq.${actId}`,payload);
-    // Audit log
-    const fields=[['name','Name'],['target','Target'],['budget_allocated','Budget'],['expected_date','Expected date'],['status','Status']];
-    for(const [f,lbl] of fields){
-      const oldVal=String(activity[f]??'');
-      const newVal=String(payload[f]??'');
-      if(oldVal!==newVal){
+    // Commit adjustments directly into the fundamental table interface
+    await api('PATCH',`/rest/v1/activities?id=eq.${actId}`, payload);
+    
+    // Generate individual tracker mutations for the audit view panel
+    const auditFields = [
+      ['name', 'Activity Name'],
+      ['target', 'Target / Description'],
+      ['status', 'Status'],
+      ['start_date', 'Start Date'],
+      ['end_date', 'End Date'],
+      ['location', 'Location'],
+      ['reason_background', 'Reason / Background'],
+      ['amount_reallocated', 'Amount Reallocated']
+    ];
+
+    for(const [f, lbl] of auditFields){
+      const oldVal = String(activity[f] ?? '');
+      const newVal = String(payload[f] ?? '');
+      if(oldVal !== newVal){
         await api('POST','/rest/v1/audit_log',{
           activity_id:  +actId,
           field_changed: lbl,
@@ -545,10 +642,17 @@ document.getElementById('btn-save-edit').addEventListener('click', async ()=>{
         });
       }
     }
+    
     await load();
-    alert('Activity updated successfully.');
-  } catch(e){ alert('Save failed: '+e.message); }
-  finally{ btn.textContent='Save changes'; btn.disabled=false; }
+    alert('Activity changes saved successfully.');
+    
+    // Shift focus panel view back to active telemetry summary
+    document.querySelector('.tab[data-tab="sessions"]').click();
+  } catch(e){ 
+    alert('Save failed: ' + e.message); 
+  } finally { 
+    btn.textContent='Save changes'; btn.disabled=false; 
+  }
 });
 
 // ── SESSION MODAL ──
@@ -577,7 +681,6 @@ document.getElementById('btn-cancel').addEventListener('click',closeModal);
 document.getElementById('modal-close').addEventListener('click',closeModal);
 document.getElementById('overlay').addEventListener('click',e=>{ if(e.target===e.currentTarget) closeModal(); });
 
-// Auto-compute total from male+female (only if values are typed out)
 ['s-male','s-female'].forEach(id=>{
   document.getElementById(id).addEventListener('input',()=>{
     const mStr = document.getElementById('s-male').value.trim();
@@ -603,7 +706,6 @@ document.getElementById('btn-save-session').addEventListener('click', async ()=>
   if(!by)      { showModalErr('Please enter your name.'); return; }
   if(total<=0) { showModalErr('Total participants must be greater than 0.'); return; }
   
-  // SMART BREAKDOWN VALIDATION: Only checks if at least one gender input contains text
   if(maleStr !== '' || femaleStr !== '') {
     const male   = parseInt(maleStr) || 0;
     const female = parseInt(femaleStr) || 0;
