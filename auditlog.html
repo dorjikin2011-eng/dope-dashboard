@@ -213,7 +213,6 @@ async function api(path){
 // ── LOAD ALL ──
 async function load(){
   try {
-    // fetch up to 1000 rows — sufficient for a full FY
     const rows = await api('/rest/v1/v_audit_log?select=*&limit=1000');
     allRows = rows || [];
     applyFilters();
@@ -390,24 +389,24 @@ function renderPagination(){
   const pg=document.getElementById('pagination');
   if(total<=1){ pg.innerHTML=''; return; }
 
-  let html=`<button ${currentPage===1?'disabled':''} onclick="goPage(${currentPage-1})">← Prev</button>`;
-  // show max 7 page buttons
+  let html=`<button ${currentPage===1?'disabled':''} onclick="window.goPage(${currentPage-1})">← Prev</button>`;
   const start=Math.max(1,currentPage-3);
   const end=Math.min(total,start+6);
   for(let i=start;i<=end;i++){
-    html+=`<button class="${i===currentPage?'active':''}" onclick="goPage(${i})">${i}</button>`;
+    html+=`<button class="${i===currentPage?'active':''}" onclick="window.goPage(${i})">${i}</button>`;
   }
-  html+=`<button ${currentPage===total?'disabled':''} onclick="goPage(${currentPage+1})">Next →</button>`;
+  html+=`<button ${currentPage===total?'disabled':''} onclick="window.goPage(${currentPage+1})">Next →</button>`;
   html+=`<span class="page-info">Page ${currentPage} of ${total} · ${filtered.length} entries</span>`;
   pg.innerHTML=html;
 }
 
-function goPage(n){
+// Exposed globally to catch inline click events cleanly
+window.goPage = function(n){
   currentPage=n;
   renderLog();
   renderPagination();
   window.scrollTo({top:0,behavior:'smooth'});
-}
+};
 
 // ── CSV EXPORT ──
 document.getElementById('btn-csv').addEventListener('click',()=>{
