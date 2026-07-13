@@ -424,8 +424,13 @@ async function load(){
     const [divRows,kpiRows,actRows,adhocRows,revRows] = await Promise.all([
       api('GET',`/rest/v1/v_division_summary?select=*&code=eq.${divCode}`),
       api('GET',`/rest/v1/v_kpi_summary?select=*&division_code=eq.${divCode}&order=created_at.asc`),
-      api('GET',`/rest/v1/v_activity_detail?select=*&division_code=eq.${divCode}&is_adhoc=eq.false&order=created_at.asc`),
-      api('GET',`/rest/v1/v_adhoc_activities?select=*&division_code=eq.${divCode}&order=created_at.asc`),
+      
+      // FIX: Embedded table join modification for planned activities
+      api('GET',`/rest/v1/v_activity_detail?select=*,divisions!inner(division_code)&divisions.division_code=eq.${divCode}&is_adhoc=eq.false&order=created_at.asc`),
+      
+      // FIX: Embedded table join modification for ad hoc activities
+      api('GET',`/rest/v1/v_adhoc_activities?select=*,divisions!inner(division_code)&divisions.division_code=eq.${divCode}&order=created_at.asc`),
+      
       api('GET',`/rest/v1/kpi_revisions?select=*&order=revised_at.desc`),
     ]);
     divRow=divRows[0]; kpis=kpiRows||[]; activities=actRows||[];
