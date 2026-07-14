@@ -684,7 +684,7 @@ function openEditKPI(id,e){
   document.getElementById('k-status').value=k.status;
   document.getElementById('k-by').value='';
   document.getElementById('k-reason').value='';
-  document.getElementById('revision-block').style.display='block';
+  document.getElementById('revision-block').style.display='none';
   document.getElementById('revision-note').style.display='none';
   document.getElementById('kpi-overlay').classList.add('open');
 }
@@ -692,8 +692,13 @@ function openEditKPI(id,e){
   document.getElementById(id).addEventListener('input',()=>{
     if(!editingKpiId) return;
     const tc=document.getElementById('k-target').value!==origKpiTarget;
-    const bc=document.getElementById('k-budget').value!==origKpiBudget;
-    document.getElementById('revision-note').style.display=(tc||bc)?'block':'none';
+    const currentBudget = parseFloat(document.getElementById('k-budget').value) || 0;
+    const originalBudget = parseFloat(origKpiBudget) || 0;
+    const bc = currentBudget !== originalBudget;
+    const hasChanged = tc || bc;
+    
+    document.getElementById('revision-block').style.display=hasChanged?'block':'none';
+    document.getElementById('revision-note').style.display=hasChanged?'block':'none';
   });
 });
 function closeKPIModal(){ document.getElementById('kpi-overlay').classList.remove('open'); editingKpiId=null; }
@@ -711,21 +716,40 @@ document.getElementById('kpi-save').addEventListener('click',async()=>{
   const reason=document.getElementById('k-reason').value.trim();
   if(!name||!target||!budget||!by){ alert('Please fill all required fields.'); return; }
   const tc=editingKpiId&&target!==origKpiTarget;
-  const bc=editingKpiId&&budget!==origKpiBudget;
+  const bc=editingKpiId&&parseFloat(budget)!==parseFloat(origKpiBudget);
   if((tc||bc)&&!reason){ alert('Please provide a reason for the revision.'); return; }
   const btn=document.getElementById('kpi-save');
   btn.textContent='Saving…'; btn.disabled=true;
   try {
+    const divData=await api('GET',`/rest/v1/divisions?select=id,code&code=eq.${divCode}`);
+    if (!divData || !divData.length) {
+      throw new Error(`Division validation failed. Code "${divCode}" matches no active context.`);
+    }
+    const divisionId = divData[0].id;
+
     if(editingKpiId){
       const k=kpis.find(x=>x.id===editingKpiId);
-      const patch={kpi_name:name,target,budget_allocated:parseFloat(budget),status};
-      if(tc||bc){ patch.original_target=k.original_target||k.target; patch.original_budget=k.original_budget||k.budget_allocated; patch.revised_at=new Date().toISOString(); patch.revised_by=by; patch.revision_reason=reason; }
+      if(!k) throw new Error("KPI record not found in local state.");
+      
+      const patch={
+        division_id: divisionId,
+        kpi_name:name,
+        target,
+        budget_allocated:parseFloat(budget),
+        status
+      };
+      if(tc||bc){ 
+        patch.original_target=k.original_target||k.target; 
+        patch.original_budget=k.original_budget||k.budget_allocated; 
+        patch.revised_at=new Date().toISOString(); 
+        patch.revised_by=by; 
+        patch.revision_reason=reason; 
+      }
       await api('PATCH',`/rest/v1/kpis?id=eq.${editingKpiId}`,patch);
       if(tc) await api('POST','/rest/v1/kpi_revisions',{kpi_id:editingKpiId,field_changed:'Target',old_value:origKpiTarget,new_value:target,revised_by:by,revision_reason:reason});
       if(bc) await api('POST','/rest/v1/kpi_revisions',{kpi_id:editingKpiId,field_changed:'Budget',old_value:origKpiBudget,new_value:budget,revised_by:by,revision_reason:reason});
     } else {
-      const divData=await api('GET',`/rest/v1/divisions?select=id&code=eq.${divCode}`);
-      await api('POST','/rest/v1/kpis',{division_id:divData[0].id,kpi_name:name,target,budget_allocated:parseFloat(budget),status,fy:'2026-2027',created_by:by});
+      await api('POST','/rest/v1/kpis',{division_id:divisionId,kpi_name:name,target,budget_allocated:parseFloat(budget),status,fy:'2026-2027',created_by:by});
     }
     closeKPIModal(); await load();
   } catch(e){ alert('Save failed: '+e.message); }
