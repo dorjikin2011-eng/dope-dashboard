@@ -878,13 +878,13 @@ function renderCoverage(divs,sess,adhocSess){
 // ══ TAB 6: SESSION LOG ══
 function renderSessionLog(sess){
   const tb=document.getElementById('sess-body');
-  if(!sess.length){tb.innerHTML=`<tr><td colspan="16" class="empty">No sessions.</td></tr>`;return;}
+  if(!sess || !sess.length){tb.innerHTML=`<tr><td colspan="16" class="empty">No sessions.</td></tr>`;return;}
   tb.innerHTML=sess.map((s,i)=>`<tr class="${s._isAdhoc?'adhoc-row':''}">
     <td>${i+1}</td>
     <td>${s._isAdhoc?`<span class="badge adhoc">⚡ Ad hoc</span>`:'<span style="font-size:11px;color:var(--text-muted)">Planned</span>'}</td>
     <td>${divPill(s._div)}</td>
-    <td style="font-size:11px;color:var(--text-muted)">${s._kpiName}</td>
-    <td>${s._actName}</td>
+    <td style="font-size:11px;color:var(--text-muted)">${s._kpiName || '—'}</td>
+    <td>${s._actName || '—'}</td>
     <td style="white-space:nowrap">${fmtDate(s.session_date)}</td>
     <td>${s.venue||'—'}</td><td>${s.place_address||'—'}</td>
     <td>${s.target_audience||'—'}</td>
@@ -893,7 +893,7 @@ function renderSessionLog(sess){
     <td class="amount">Nu. ${fmt(s.expenditure)}</td>
     <td>${s.duration||'—'}</td>
     <td style="font-size:12px;max-width:130px;white-space:normal">${s.remarks||'—'}</td>
-    <td>${s.entered_by}</td>
+    <td>${s.entered_by||'—'}</td>
   </tr>`).join('');
 }
 
