@@ -171,6 +171,7 @@
 
 <div class="page">
   <div class="breadcrumb" id="breadcrumb">
+    <a href="index.html">← Back to Dashboard</a> &nbsp;|&nbsp;
     <a href="index.html">Home</a> ›
     <a href="#" id="bc-div">Division</a> ›
     <span id="bc-act">Activity</span>
@@ -412,7 +413,6 @@ document.querySelectorAll('.tab').forEach(tab=>{
 async function load(){
   if(!actId){ document.getElementById('act-header').innerHTML='<div class="err-box">No activity specified.</div>'; return; }
   try {
-    // Parallel pull core layout data, sessions data, dynamic list references
     const [actRows, sessRows, kpiRows, actListRows] = await Promise.all([
       api('GET',`/rest/v1/v_activity_detail?select=*&id=eq.${actId}`),
       api('GET',`/rest/v1/sessions?select=*&activity_id=eq.${actId}&order=session_date.asc`),
@@ -423,7 +423,6 @@ async function load(){
     activity = actRows[0];
     sessions = sessRows || [];
     
-    // Populate Dynamic dropdown configurations
     populateDropdown('e-kpi', kpiRows, 'id', 'kpi_name', activity?.kpi_id, '— None (Select if this contributes to a KPI target) —');
     populateDropdown('e-budget-from', actListRows, 'id', 'name', activity?.budget_reallocated_from, '— None (Zero Cost / Met by other agency) —');
 
@@ -453,39 +452,71 @@ function populateDropdown(elemId, data, valField, textField, selectedVal, defaul
 function renderHeader(){
   const a = activity;
   if(!a){ document.getElementById('act-header').innerHTML='<div class="err-box">Activity not found.</div>'; return; }
-  document.title = a.name+' — DoPE Dashboard';
-  document.getElementById('bc-div').textContent = a.division_code;
-  document.getElementById('bc-div').href = `division.html?div=${a.division_code}`;
-  document.getElementById('bc-act').textContent = a.name;
   
-  // Total actual computation safely computed from view aggregates
-  const actual  = +a.total_actual||0;
-  const budget  = +a.budget_allocated||+a.amount_reallocated||0;
-  const balance = budget-actual;
-  const pct     = budget>0?Math.min(Math.round(actual/budget*100),100):0;
+  document.title = (a.name || 'Activity') + ' — DoPE Dashboard';
   
-  const hasMale = a.total_male !== null && a.total_male !== undefined && +a.total_male > 0;
-  const hasFemale = a.total_female !== null && a.total_female !== undefined && +a.total_female > 0;
-  const genderBreakdownStr = (hasMale || hasFemale) ? `${fmtCount(a.total_male)} / ${fmtCount(a.total_female)}` : '—';
+  const divCode = a.division_code || 'DoPE';
+  const divName = a.division_name || 'Department of Prevention & Education';
+  
+  document.getElementById('bc-div').textContent = divCode;
+  document.getElementById('bc-div').href = `division.html?div=${divCode}`;
+  document.getElementById('bc-act').textContent = a.name || 'Activity';
+  
+  // Calculate live localized telemetry counts directly from session arrays
+  let localTotalParticipants = 0;
+  let localTotalMale = 0;
+  let localTotalFemale = 0;
+  let localActualSpent = 0;
+  let hasLocalDemographics = false;
+
+  if (sessions && sessions.length > 0) {
+    sessions.forEach(s => {
+      localTotalParticipants += (+s.participants_total || 0);
+      localActualSpent += (+s.expenditure || 0);
+      if (s.participants_male !== null && s.participants_male !== undefined) {
+        localTotalMale += (+s.participants_male);
+        hasLocalDemographics = true;
+      }
+      if (s.participants_female !== null && s.participants_female !== undefined) {
+        localTotalFemale += (+s.participants_female);
+        hasLocalDemographics = true;
+      }
+    });
+  }
+
+  const totalParticipants = localTotalParticipants > 0 ? localTotalParticipants : (a.total_participants || 0);
+  const actual = localActualSpent > 0 ? localActualSpent : (+a.total_actual || 0);
+  const sessionCount = sessions ? sessions.length : (a.session_count || 0);
+
+  const budget = +a.budget_allocated || +a.amount_reallocated || 0;
+  const balance = budget - actual;
+  const pct = budget > 0 ? Math.min(Math.round(actual / budget * 100), 100) : 0;
+  
+  let genderBreakdownStr = '—';
+  if (hasLocalDemographics) {
+    genderBreakdownStr = `${localTotalMale} / ${localTotalFemale}`;
+  } else if (a.total_male || a.total_female) {
+    genderBreakdownStr = `${fmtCount(a.total_male)} / ${fmtCount(a.total_female)}`;
+  }
 
   document.getElementById('act-header').innerHTML = `
     <div class="top">
       <div>
-        <h1>${a.name}</h1>
-        <div class="meta">${a.division_code} · ${a.division_name}${a.target?' · Target: '+a.target:''}</div>
+        <h1>${a.name || 'Unnamed Activity'}</h1>
+        <div class="meta">${divCode} · ${divName} ${a.target ? ' · Target: ' + a.target : ''}</div>
       </div>
       <div class="right">
-        <span class="badge ${a.status}">${a.status}</span>
+        <span class="badge ${a.status || 'Not Started'}">${a.status || 'Not Started'}</span>
       </div>
     </div>
     <div class="act-stats">
       <div class="act-stat"><div class="l">Budget (Nu.)</div><div class="v">Nu. ${fmtAmt(budget)}</div></div>
       <div class="act-stat"><div class="l">Actual spent (Nu.)</div><div class="v">Nu. ${fmtAmt(actual)}</div></div>
-      <div class="act-stat"><div class="l">Balance (Nu.)</div><div class="v ${balance<0?'over':''}">Nu. ${fmtAmt(balance)}</div></div>
-      <div class="act-stat"><div class="l">Sessions</div><div class="v">${fmtCount(a.session_count || 0)}</div></div>
-      <div class="act-stat"><div class="l">Total participants</div><div class="v">${fmtCount(a.total_participants)}</div></div>
+      <div class="act-stat"><div class="l">Balance (Nu.)</div><div class="v ${balance < 0 ? 'over' : ''}">Nu. ${fmtAmt(balance)}</div></div>
+      <div class="act-stat"><div class="l">Sessions</div><div class="v">${sessionCount}</div></div>
+      <div class="act-stat"><div class="l">Total participants</div><div class="v">${fmtCount(totalParticipants)}</div></div>
       <div class="act-stat"><div class="l">Male / Female</div><div class="v">${genderBreakdownStr}</div></div>
-      ${a.start_date?`<div class="act-stat"><div class="l">Timeline</div><div class="v" style="font-size:12px">${fmtDate(a.start_date)} - ${fmtDate(a.end_date)}</div></div>`:''}
+      ${a.start_date ? `<div class="act-stat"><div class="l">Timeline</div><div class="v" style="font-size:12px">${fmtDate(a.start_date)} - ${fmtDate(a.end_date)}</div></div>` : ''}
     </div>
     <div class="bar-track" style="margin-top:14px">
       <div class="bar-fill" style="width:${pct}%"></div>
@@ -614,10 +645,8 @@ document.getElementById('btn-save-edit').addEventListener('click', async ()=>{
   btn.textContent='Saving…'; btn.disabled=true;
   
   try {
-    // Commit adjustments directly into the fundamental table interface
     await api('PATCH',`/rest/v1/activities?id=eq.${actId}`, payload);
     
-    // Generate individual tracker mutations for the audit view panel
     const auditFields = [
       ['name', 'Activity Name'],
       ['target', 'Target / Description'],
@@ -645,8 +674,6 @@ document.getElementById('btn-save-edit').addEventListener('click', async ()=>{
     
     await load();
     alert('Activity changes saved successfully.');
-    
-    // Shift focus panel view back to active telemetry summary
     document.querySelector('.tab[data-tab="sessions"]').click();
   } catch(e){ 
     alert('Save failed: ' + e.message); 
