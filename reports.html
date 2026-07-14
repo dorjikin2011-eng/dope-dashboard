@@ -422,7 +422,7 @@ function getVal(obj, keys) {
 const getSessions = (a) => getVal(a, ['session_count', 'total_sessions', 'sessions', 'session_num']);
 const getParticipants = (a) => getVal(a, ['total_participants', 'participants', 'participant_count', 'participants_total']);
 const getActual = (a) => getVal(a, ['total_actual', 'actual', 'actual_expenditure', 'total_expenditure', 'expenditure']);
-const getRealloc = (a) => getVal(a, ['realloc_amount', 'reallocated_amount', 'reallocated_budget', 'realloc_budget']);
+const getRealloc = (a) => getVal(a, ['realloc_amount', 'reallocated_amount', 'reallocated_budget', 'realloc_budget', 'budget_allocated']);
 
 // FILTERS
 function getF(){ return{div:document.getElementById('f-div').value, from:document.getElementById('f-from').value, to:document.getElementById('f-to').value}; }
@@ -452,7 +452,6 @@ async function loadData(){
       s._isAdhoc=!!s.activities?.is_adhoc;
     });
 
-    // Client-side self-healing fallback mapping loop for codes
     allAdhoc.forEach(a => {
       if (!a.division_code || a.division_code === '?') {
         const matchingDiv = allDivisions.find(d => d.id === a.division_id || d.division_id === a.division_id || d.code === a.division_code);
@@ -504,7 +503,6 @@ function renderAPT(kpis,sess){
     <div class="kbox" style="--accent:var(--green)"><div class="l">KPIs completed</div><div class="v">${kpis.filter(k=>k.status==='Completed').length} / ${kpis.length}</div></div>
     <div class="kbox adhoc"><div class="l">Ad hoc under KPIs</div><div class="v">${adhocUnderKpi.length}</div><div class="sub">Linked to a KPI</div></div>`;
 
-  // APT table
   const tb=document.getElementById('apt-body');
   if(!kpis.length){tb.innerHTML=`<tr><td colspan="11" class="empty">No KPIs yet.</td></tr>`;return;}
   let tBud=0,tActual=0,tActs=0,tAdhocCount=0,tPart=0;
@@ -546,7 +544,6 @@ function renderAPT(kpis,sess){
     <td><strong>${tP}%</strong></td></tr>`;
   tb.innerHTML=rows;
 
-  // Revisions
   const rb=document.getElementById('rev-body');
   const revs=allRevisions.filter(r=>!getF().div||r.kpis?.divisions?.code===getF().div);
   if(!revs.length){rb.innerHTML=`<tr><td colspan="8" class="empty">No revisions recorded.</td></tr>`;return;}
@@ -562,10 +559,18 @@ function renderAPT(kpis,sess){
 
 // ══ TAB 2: AD HOC ══
 function renderAdhoc(adhoc,adhocSess,plannedActs,divs,plannedSess){
+  // Map dynamic session statistics to each ad hoc activity record
+  adhoc.forEach(a => {
+    const actSessions = adhocSess.filter(s => s.activity_id === a.id);
+    a._sessionsCount = actSessions.length;
+    a._participantsCount = actSessions.reduce((sum, s) => sum + +s.participants_total, 0);
+    a._actualExpenditure = actSessions.reduce((sum, s) => sum + +s.expenditure, 0);
+  });
+
   const totAdhoc=adhoc.length;
-  const totExp=adhoc.reduce((a,x)=>a+ +getActual(x),0);
+  const totExp=adhoc.reduce((a,x)=>a+ x._actualExpenditure,0);
   const totRealloc=adhoc.reduce((a,x)=>a+ +getRealloc(x),0);
-  const totP=adhoc.reduce((a,x)=>a+ +getParticipants(x),0);
+  const totP=adhoc.reduce((a,x)=>a+ x._participantsCount,0);
   const underKpi=adhoc.filter(a=>a.kpi_id);
   const standalone=adhoc.filter(a=>!a.kpi_id);
 
@@ -577,7 +582,6 @@ function renderAdhoc(adhoc,adhocSess,plannedActs,divs,plannedSess){
     <div class="kbox adhoc"><div class="l">Total reallocated (Nu.)</div><div class="v" style="font-size:15px">Nu. ${fmt(totRealloc)}</div></div>
     <div class="kbox adhoc"><div class="l">Participants reached</div><div class="v">${fmt(totP)}</div></div>`;
 
-  // Chart: ad hoc by division
   destroyChart('adhoc-div');
   const divCodes=['ADMD','EAD','ED','PD'].filter(d=>!getF().div||d===getF().div);
   charts['adhoc-div']=new Chart(document.getElementById('chart-adhoc-div'),{type:'bar',
@@ -588,7 +592,6 @@ function renderAdhoc(adhoc,adhocSess,plannedActs,divs,plannedSess){
     options:{...COPTS,scales:{x:{stacked:true,ticks:{font:{size:11}}},y:{stacked:true,ticks:{font:{size:11},stepSize:1}}}}
   });
 
-  // Chart: planned vs ad hoc expenditure
   destroyChart('adhoc-exp');
   charts['adhoc-exp']=new Chart(document.getElementById('chart-adhoc-exp'),{type:'bar',
     data:{labels:divCodes,datasets:[
@@ -606,11 +609,11 @@ function renderAdhoc(adhoc,adhocSess,plannedActs,divs,plannedSess){
     <td style="font-weight:500">${a.name}</td>
     <td style="font-size:12px;max-width:160px;white-space:normal">${a.adhoc_reason||'—'}</td>
     <td><span class="badge ${a.status}">${a.status}</span></td>
-    <td style="text-align:center">${getSessions(a)}</td>
-    <td>${fmt(getParticipants(a))}</td>
+    <td style="text-align:center">${a._sessionsCount}</td>
+    <td>${fmt(a._participantsCount)}</td>
     <td style="font-size:12px">${a.realloc_from_name||'—'}</td>
     <td class="amount">Nu. ${fmt(getRealloc(a))}</td>
-    <td class="amount">Nu. ${fmt(getActual(a))}</td>
+    <td class="amount">Nu. ${fmt(a._actualExpenditure)}</td>
   </tr>`).join('')
   :`<tr><td colspan="11" class="empty">No ad hoc activities linked to a KPI.</td></tr>`;
 
@@ -621,15 +624,15 @@ function renderAdhoc(adhoc,adhocSess,plannedActs,divs,plannedSess){
     <td style="font-weight:500">${a.name}</td>
     <td style="font-size:12px;max-width:160px;white-space:normal">${a.adhoc_reason||'—'}</td>
     <td><span class="badge ${a.status}">${a.status}</span></td>
-    <td style="text-align:center">${getSessions(a)}</td>
-    <td>${fmt(getParticipants(a))}</td>
+    <td style="text-align:center">${a._sessionsCount}</td>
+    <td>${fmt(a._participantsCount)}</td>
     <td style="font-size:12px">${a.realloc_from_name||'—'}</td>
     <td class="amount">Nu. ${fmt(getRealloc(a))}</td>
-    <td class="amount">Nu. ${fmt(getActual(a))}</td>
+    <td class="amount">Nu. ${fmt(a._actualExpenditure)}</td>
   </tr>`).join('')
   :`<tr><td colspan="10" class="empty">No standalone ad hoc activities.</td></tr>`;
 
-  // Reallocation summary — group by source activity
+  // Reallocation summary
   const tb3=document.getElementById('realloc-body');
   const srcMap={};
   adhoc.forEach(a=>{
@@ -639,7 +642,6 @@ function renderAdhoc(adhoc,adhocSess,plannedActs,divs,plannedSess){
     srcMap[key].count++;
     srcMap[key].totalRealloc+= +getRealloc(a);
   });
-  // enrich with source budget from planned activities
   plannedActs.forEach(a=>{ if(srcMap[a.id]){ srcMap[a.id].srcBudget=+a.budget_allocated; } });
   const srcRows=Object.entries(srcMap);
   tb3.innerHTML=srcRows.length?srcRows.map(([id,s])=>{
@@ -910,7 +912,7 @@ document.getElementById('btn-csv').addEventListener('click',()=>{
     ...kpis.map(k=>[k.division_code,k.kpi_name,k.target,k.budget_allocated,k.total_actual,+k.budget_allocated - +k.total_actual,k.total_activities,k.total_adhoc||0,k.total_participants,k.status]),
     [],['=== AD HOC ACTIVITIES ==='],
     ['Division','KPI','Activity','Reason','Status','Sessions','Participants','Realloc. from','Realloc. amount (Nu.)','Actual (Nu.)'],
-    ...adhoc.map(a=>[a.division_code,a.kpi_name||'Standalone',a.name,a.adhoc_reason||'',a.status,getSessions(a),getParticipants(a),a.realloc_from_name||'',getRealloc(a),getActual(a)]),
+    ...adhoc.map(a=>[a.division_code,a.kpi_name||'Standalone',a.name,a.adhoc_reason||'',a.status,a._sessionsCount,a._participantsCount,a.realloc_from_name||'',getRealloc(a),a._actualExpenditure]),
     [],['=== PLANNED ACTIVITY DETAIL ==='],
     ['Division','KPI','Activity','Sessions','Status','Budget (Nu.)','Actual (Nu.)'],
     ...acts.map(a=>[a.division_code,a.kpi_name||'',a.name,getSessions(a),a.status,a.budget_allocated,getActual(a)]),
