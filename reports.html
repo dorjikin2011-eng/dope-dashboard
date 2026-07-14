@@ -411,6 +411,19 @@ document.querySelectorAll('.rtab').forEach(t=>{
   });
 });
 
+// SELF-HEALING COLUMN PROPERTY MAPPER
+function getVal(obj, keys) {
+  if (!obj) return 0;
+  for (let key of keys) {
+    if (obj[key] !== undefined && obj[key] !== null) return obj[key];
+  }
+  return 0;
+}
+const getSessions = (a) => getVal(a, ['session_count', 'total_sessions', 'sessions', 'session_num']);
+const getParticipants = (a) => getVal(a, ['total_participants', 'participants', 'participant_count', 'participants_total']);
+const getActual = (a) => getVal(a, ['total_actual', 'actual', 'actual_expenditure', 'total_expenditure', 'expenditure']);
+const getRealloc = (a) => getVal(a, ['realloc_amount', 'reallocated_amount', 'reallocated_budget', 'realloc_budget']);
+
 // FILTERS
 function getF(){ return{div:document.getElementById('f-div').value, from:document.getElementById('f-from').value, to:document.getElementById('f-to').value}; }
 function fSess(all){ const{div,from,to}=getF(); return all.filter(s=>{ const m=s.session_date?.slice(0,7); return(!div||s._div===div)&&(!from||m>=from)&&(!to||m<=to); }); }
@@ -427,9 +440,7 @@ async function loadData(){
     [allDivisions,allKpis,allActivities,allAdhoc,allSessions,allRevisions]=await Promise.all([
       api('/rest/v1/v_division_summary?select=*'),
       api('/rest/v1/v_kpi_summary?select=*&order=division_code.asc,created_at.asc'),
-      // Fix 2: Changed sorting parameter here from division_code to division_id
       api('/rest/v1/v_activity_detail?select=*&is_adhoc=eq.false&order=division_id.asc,created_at.asc'),
-      // Fix 1: Changed sorting parameter here from division_code to division_id
       api('/rest/v1/v_adhoc_activities?select=*&order=division_id.asc,created_at.asc'),
       api('/rest/v1/sessions?select=*,activities(is_adhoc,kpi_id,division_id,name,divisions(code),kpis(kpi_name))&order=session_date.asc'),
       api('/rest/v1/kpi_revisions?select=*,kpis(kpi_name,divisions(code))&order=revised_at.desc'),
@@ -441,16 +452,19 @@ async function loadData(){
       s._isAdhoc=!!s.activities?.is_adhoc;
     });
 
-    // Client-side mapping loop for adhoc items to generate code from id
+    // Client-side self-healing fallback mapping loop for codes
     allAdhoc.forEach(a => {
-      const matchingDiv = allDivisions.find(d => d.id === a.division_id);
-      a.division_code = matchingDiv ? matchingDiv.code : '?';
+      if (!a.division_code || a.division_code === '?') {
+        const matchingDiv = allDivisions.find(d => d.id === a.division_id || d.division_id === a.division_id || d.code === a.division_code);
+        a.division_code = matchingDiv ? matchingDiv.code : (a.division_code || '?');
+      }
     });
 
-    // Client-side mapping loop for planned activities items to generate code from id
     allActivities.forEach(a => {
-      const matchingDiv = allDivisions.find(d => d.id === a.division_id);
-      a.division_code = matchingDiv ? matchingDiv.code : '?';
+      if (!a.division_code || a.division_code === '?') {
+        const matchingDiv = allDivisions.find(d => d.id === a.division_id || d.division_id === a.division_id || d.code === a.division_code);
+        a.division_code = matchingDiv ? matchingDiv.code : (a.division_code || '?');
+      }
     });
 
     render();
@@ -549,9 +563,9 @@ function renderAPT(kpis,sess){
 // ══ TAB 2: AD HOC ══
 function renderAdhoc(adhoc,adhocSess,plannedActs,divs,plannedSess){
   const totAdhoc=adhoc.length;
-  const totExp=adhoc.reduce((a,x)=>a+ +x.total_actual,0);
-  const totRealloc=adhoc.reduce((a,x)=>a+ +x.realloc_amount,0);
-  const totP=adhoc.reduce((a,x)=>a+ +x.total_participants,0);
+  const totExp=adhoc.reduce((a,x)=>a+ +getActual(x),0);
+  const totRealloc=adhoc.reduce((a,x)=>a+ +getRealloc(x),0);
+  const totP=adhoc.reduce((a,x)=>a+ +getParticipants(x),0);
   const underKpi=adhoc.filter(a=>a.kpi_id);
   const standalone=adhoc.filter(a=>!a.kpi_id);
 
@@ -592,11 +606,11 @@ function renderAdhoc(adhoc,adhocSess,plannedActs,divs,plannedSess){
     <td style="font-weight:500">${a.name}</td>
     <td style="font-size:12px;max-width:160px;white-space:normal">${a.adhoc_reason||'—'}</td>
     <td><span class="badge ${a.status}">${a.status}</span></td>
-    <td style="text-align:center">${a.session_count||0}</td>
-    <td>${fmt(a.total_participants)}</td>
+    <td style="text-align:center">${getSessions(a)}</td>
+    <td>${fmt(getParticipants(a))}</td>
     <td style="font-size:12px">${a.realloc_from_name||'—'}</td>
-    <td class="amount">Nu. ${fmt(a.realloc_amount)}</td>
-    <td class="amount">Nu. ${fmt(a.total_actual)}</td>
+    <td class="amount">Nu. ${fmt(getRealloc(a))}</td>
+    <td class="amount">Nu. ${fmt(getActual(a))}</td>
   </tr>`).join('')
   :`<tr><td colspan="11" class="empty">No ad hoc activities linked to a KPI.</td></tr>`;
 
@@ -607,11 +621,11 @@ function renderAdhoc(adhoc,adhocSess,plannedActs,divs,plannedSess){
     <td style="font-weight:500">${a.name}</td>
     <td style="font-size:12px;max-width:160px;white-space:normal">${a.adhoc_reason||'—'}</td>
     <td><span class="badge ${a.status}">${a.status}</span></td>
-    <td style="text-align:center">${a.session_count||0}</td>
-    <td>${fmt(a.total_participants)}</td>
+    <td style="text-align:center">${getSessions(a)}</td>
+    <td>${fmt(getParticipants(a))}</td>
     <td style="font-size:12px">${a.realloc_from_name||'—'}</td>
-    <td class="amount">Nu. ${fmt(a.realloc_amount)}</td>
-    <td class="amount">Nu. ${fmt(a.total_actual)}</td>
+    <td class="amount">Nu. ${fmt(getRealloc(a))}</td>
+    <td class="amount">Nu. ${fmt(getActual(a))}</td>
   </tr>`).join('')
   :`<tr><td colspan="10" class="empty">No standalone ad hoc activities.</td></tr>`;
 
@@ -623,7 +637,7 @@ function renderAdhoc(adhoc,adhocSess,plannedActs,divs,plannedSess){
     const key=a.realloc_from_id;
     if(!srcMap[key]) srcMap[key]={name:a.realloc_from_name||'Unknown',div:a.division_code,count:0,totalRealloc:0,srcBudget:0};
     srcMap[key].count++;
-    srcMap[key].totalRealloc+= +a.realloc_amount;
+    srcMap[key].totalRealloc+= +getRealloc(a);
   });
   // enrich with source budget from planned activities
   plannedActs.forEach(a=>{ if(srcMap[a.id]){ srcMap[a.id].srcBudget=+a.budget_allocated; } });
@@ -682,17 +696,17 @@ function renderPerformance(kpis,acts,divs){
 
   const tb=document.getElementById('act-body');
   tb.innerHTML=acts.length?acts.map(a=>{
-    const p=a.budget_allocated>0?Math.round(a.total_actual/a.budget_allocated*100):0;
+    const p=a.budget_allocated>0?Math.round(getActual(a)/a.budget_allocated*100):0;
     const c=DIV_COLORS[a.division_code]||{bg:'#888'};
     return `<tr class="clickable" onclick="location.href='activity.html?id=${a.id}'">
       <td>${divPill(a.division_code)}</td>
       <td style="font-size:12px;color:var(--text-muted)">${a.kpi_name||'—'}</td>
       <td style="font-weight:500">${a.name}</td>
       <td><span style="font-size:11px;color:var(--text-muted)">Planned</span></td>
-      <td style="text-align:center">${a.session_count||0}</td>
+      <td style="text-align:center">${getSessions(a)}</td>
       <td><span class="badge ${a.status}">${a.status}</span></td>
       <td class="amount">Nu. ${fmt(a.budget_allocated)}</td>
-      <td class="amount">Nu. ${fmt(a.total_actual)}</td>
+      <td class="amount">Nu. ${fmt(getActual(a))}</td>
       <td>${pctBar(p,c.bg)}</td>
     </tr>`;
   }).join(''):`<tr><td colspan="9" class="empty">No activities.</td></tr>`;
@@ -896,10 +910,10 @@ document.getElementById('btn-csv').addEventListener('click',()=>{
     ...kpis.map(k=>[k.division_code,k.kpi_name,k.target,k.budget_allocated,k.total_actual,+k.budget_allocated - +k.total_actual,k.total_activities,k.total_adhoc||0,k.total_participants,k.status]),
     [],['=== AD HOC ACTIVITIES ==='],
     ['Division','KPI','Activity','Reason','Status','Sessions','Participants','Realloc. from','Realloc. amount (Nu.)','Actual (Nu.)'],
-    ...adhoc.map(a=>[a.division_code,a.kpi_name||'Standalone',a.name,a.adhoc_reason||'',a.status,a.session_count||0,a.total_participants,a.realloc_from_name||'',a.realloc_amount,a.total_actual]),
+    ...adhoc.map(a=>[a.division_code,a.kpi_name||'Standalone',a.name,a.adhoc_reason||'',a.status,getSessions(a),getParticipants(a),a.realloc_from_name||'',getRealloc(a),getActual(a)]),
     [],['=== PLANNED ACTIVITY DETAIL ==='],
     ['Division','KPI','Activity','Sessions','Status','Budget (Nu.)','Actual (Nu.)'],
-    ...acts.map(a=>[a.division_code,a.kpi_name||'',a.name,a.session_count||0,a.status,a.budget_allocated,a.total_actual]),
+    ...acts.map(a=>[a.division_code,a.kpi_name||'',a.name,getSessions(a),a.status,a.budget_allocated,getActual(a)]),
     [],['=== SESSION LOG ==='],
     ['Type','Division','KPI','Activity','Date','Venue','Place','Audience','Total','Male','Female','Expenditure (Nu.)','Duration','Remarks','Entered by'],
     ...sess.map(s=>[s._isAdhoc?'Ad hoc':'Planned',s._div,s._kpiName,s._actName,s.session_date,s.venue||'',s.place_address||'',s.target_audience||'',s.participants_total,s.participants_male,s.participants_female,s.expenditure,s.duration||'',s.remarks||'',s.entered_by]),
