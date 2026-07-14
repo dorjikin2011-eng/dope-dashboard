@@ -428,7 +428,7 @@ async function loadData(){
       api('/rest/v1/v_division_summary?select=*'),
       api('/rest/v1/v_kpi_summary?select=*&order=division_code.asc,created_at.asc'),
       api('/rest/v1/v_activity_detail?select=*&is_adhoc=eq.false&order=division_code.asc,created_at.asc'),
-      api('/rest/v1/v_adhoc_activities?select=*&order=division_code.asc,created_at.asc'),
+      api('/rest/v1/v_adhoc_activities?select=*&order=division_id.asc,created_at.asc'),
       api('/rest/v1/sessions?select=*,activities(is_adhoc,kpi_id,division_id,name,divisions(code),kpis(kpi_name))&order=session_date.asc'),
       api('/rest/v1/kpi_revisions?select=*,kpis(kpi_name,divisions(code))&order=revised_at.desc'),
     ]);
@@ -438,6 +438,13 @@ async function loadData(){
       s._kpiName=s.activities?.kpis?.kpi_name||'—';
       s._isAdhoc=!!s.activities?.is_adhoc;
     });
+
+    // Client-side dynamic map to protect against missing view field division_code
+    allAdhoc.forEach(a => {
+      const matchingDiv = allDivisions.find(d => d.id === a.division_id);
+      a.division_code = matchingDiv ? matchingDiv.code : '?';
+    });
+
     render();
   } catch(e){ showErr('Error: '+e.message); }
 }
@@ -493,7 +500,7 @@ function renderAPT(kpis,sess){
       tPart+= +k.total_participants;
       rows+=`<tr>
         ${i===0?`<td rowspan="${dKpis.length}" style="vertical-align:middle">${divPill(div)}</td>`:''}
-        <td>${k.kpi_name}${revRevised?`<span class="revised-badge">Revised</span>`:''}</td>
+        <td>${k.kpi_name}${revised?`<span class="revised-badge">Revised</span>`:''}</td>
         <td style="font-size:12px;color:var(--text-muted);max-width:160px">${k.target}</td>
         <td class="amount">Nu. ${fmt(k.budget_allocated)}</td>
         <td class="amount">Nu. ${fmt(k.total_actual)}</td>
