@@ -414,7 +414,7 @@ async function api(method,path,body){
     method,
     headers:{apikey:SUPA_KEY,Authorization:'Bearer '+SUPA_KEY,
       'Content-Type':'application/json',
-      Prefer:method==='POST'?'return=representation':''},
+      Prefer:(method==='POST' || method==='PATCH') ? 'return=representation' : ''},
     body:body?JSON.stringify(body):undefined
   });
   const txt=await r.text();
@@ -688,7 +688,7 @@ function openEditKPI(id,e){
   document.getElementById('revision-note').style.display='none';
   document.getElementById('kpi-overlay').classList.add('open');
 }
-['k-target','k-budget'].forEach(id=>{
+['k-target','k-budget', 'k-name'].forEach(id=>{
   document.getElementById(id).addEventListener('input',()=>{
     if(!editingKpiId) return;
     const tc=document.getElementById('k-target').value!==origKpiTarget;
@@ -745,7 +745,10 @@ document.getElementById('kpi-save').addEventListener('click',async()=>{
         patch.revised_by=by; 
         patch.revision_reason=reason; 
       }
-      await api('PATCH',`/rest/v1/kpis?id=eq.${editingKpiId}`,patch);
+      const res = await api('PATCH',`/rest/v1/kpis?id=eq.${editingKpiId}`,patch);
+      if(!res || res.length === 0){
+         throw new Error("Database rejected update. Row-Level Security (RLS) policies blocked this write.");
+      }
       if(tc) await api('POST','/rest/v1/kpi_revisions',{kpi_id:editingKpiId,field_changed:'Target',old_value:origKpiTarget,new_value:target,revised_by:by,revision_reason:reason});
       if(bc) await api('POST','/rest/v1/kpi_revisions',{kpi_id:editingKpiId,field_changed:'Budget',old_value:origKpiBudget,new_value:budget,revised_by:by,revision_reason:reason});
     } else {
