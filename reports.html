@@ -427,7 +427,9 @@ async function loadData(){
     [allDivisions,allKpis,allActivities,allAdhoc,allSessions,allRevisions]=await Promise.all([
       api('/rest/v1/v_division_summary?select=*'),
       api('/rest/v1/v_kpi_summary?select=*&order=division_code.asc,created_at.asc'),
-      api('/rest/v1/v_activity_detail?select=*&is_adhoc=eq.false&order=division_code.asc,created_at.asc'),
+      // Fix 2: Changed sorting parameter here from division_code to division_id
+      api('/rest/v1/v_activity_detail?select=*&is_adhoc=eq.false&order=division_id.asc,created_at.asc'),
+      // Fix 1: Changed sorting parameter here from division_code to division_id
       api('/rest/v1/v_adhoc_activities?select=*&order=division_id.asc,created_at.asc'),
       api('/rest/v1/sessions?select=*,activities(is_adhoc,kpi_id,division_id,name,divisions(code),kpis(kpi_name))&order=session_date.asc'),
       api('/rest/v1/kpi_revisions?select=*,kpis(kpi_name,divisions(code))&order=revised_at.desc'),
@@ -439,8 +441,14 @@ async function loadData(){
       s._isAdhoc=!!s.activities?.is_adhoc;
     });
 
-    // Client-side dynamic map to protect against missing view field division_code
+    // Client-side mapping loop for adhoc items to generate code from id
     allAdhoc.forEach(a => {
+      const matchingDiv = allDivisions.find(d => d.id === a.division_id);
+      a.division_code = matchingDiv ? matchingDiv.code : '?';
+    });
+
+    // Client-side mapping loop for planned activities items to generate code from id
+    allActivities.forEach(a => {
       const matchingDiv = allDivisions.find(d => d.id === a.division_id);
       a.division_code = matchingDiv ? matchingDiv.code : '?';
     });
