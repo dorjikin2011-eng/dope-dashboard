@@ -3,18 +3,17 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Reports — DoPE Dashboard</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<title>DoPE Dashboard — FY 2026-2027</title>
 <style>
   :root {
-    --purple:#534AB7; --purple-light:#EEEDFE;
+    --purple:#534AB7; --purple-light:#EEEDFE; --purple-dark:#3C3489;
     --teal:#1D9E75;   --teal-light:#E1F5EE;
     --blue:#378ADD;   --blue-light:#E6F1FB;
     --green:#639922;  --green-light:#EAF3DE;
     --amber:#BA7517;  --amber-light:#FAEEDA;
     --red:#A32D2D;    --red-light:#FCEBEB;
+    --coral:#993C1D;  --coral-light:#FAECE7;
     --gray:#5F5E5A;   --gray-light:#F1EFE8;
-    --orange:#C25A00; --orange-light:#FDF0E6;
     --text:#2C2C2A;   --text-muted:#5F5E5A;
     --border:rgba(0,0,0,0.12);
     --bg:#F6F5F0;     --card:#FFFFFF;
@@ -23,351 +22,227 @@
   *{box-sizing:border-box;margin:0;padding:0;}
   body{font-family:system-ui,sans-serif;background:var(--bg);color:var(--text);font-size:15px;}
 
+  /* NAV */
   nav{background:var(--purple);color:#fff;padding:0 24px;height:52px;
     display:flex;align-items:center;justify-content:space-between;
     position:sticky;top:0;z-index:100;}
-  nav .brand{font-weight:600;font-size:15px;}
+  nav .brand{font-weight:600;font-size:15px;letter-spacing:.01em;}
   nav .brand span{opacity:.7;font-weight:400;margin-left:8px;font-size:13px;}
   nav .nav-links{display:flex;gap:6px;}
   nav a{color:rgba(255,255,255,.85);text-decoration:none;padding:6px 14px;
     border-radius:6px;font-size:13px;transition:background .15s;}
   nav a:hover,nav a.active{background:rgba(255,255,255,.18);color:#fff;}
+  #last-viewed{font-size:11px; opacity:0.8; margin-right:10px;}
 
-  .page{max-width:1200px;margin:0 auto;padding:24px 20px 60px;}
-  .breadcrumb{font-size:13px;color:var(--text-muted);margin-bottom:18px;}
-  .breadcrumb a{color:var(--purple);text-decoration:none;}
-  .breadcrumb a:hover{text-decoration:underline;}
+  .page{max-width:1100px;margin:0 auto;padding:28px 20px 60px;}
+  h2{font-size:16px;font-weight:600;color:var(--text);margin-bottom:14px;}
+  .section{margin-bottom:32px;}
 
-  .report-tabs{display:flex;gap:4px;border-bottom:2px solid var(--border);margin-bottom:24px;flex-wrap:wrap;}
-  .rtab{padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer;
-    border:none;background:none;color:var(--text-muted);
-    border-bottom:2px solid transparent;margin-bottom:-2px;transition:color .15s;}
-  .rtab:hover{color:var(--text);}
-  .rtab.active{color:var(--purple);border-bottom-color:var(--purple);}
-  .rpanel{display:none;}
-  .rpanel.active{display:block;}
+  /* METRIC CARDS */
+  .metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;}
+  .metric-card{background:var(--card);border:0.5px solid var(--border);
+    border-radius:var(--radius);padding:16px 18px;
+    border-left:4px solid var(--accent,var(--teal));}
+  .metric-card .label{font-size:12px;color:var(--text-muted);margin-bottom:6px;}
+  .metric-card .value{font-size:28px;font-weight:600;color:var(--accent,var(--teal));}
+  .metric-card .sub{font-size:12px;color:var(--text-muted);margin-top:2px;}
 
-  .filter-bar{background:var(--card);border:0.5px solid var(--border);
-    border-radius:var(--radius);padding:14px 20px;
-    display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:20px;}
-  .filter-bar label{font-size:12px;font-weight:600;color:var(--text-muted);margin-right:4px;}
-  .filter-bar select{padding:6px 10px;border:1px solid var(--border);border-radius:7px;
-    font-size:13px;font-family:inherit;background:#fff;color:var(--text);outline:none;}
-  .filter-bar select:focus{border-color:var(--purple);}
-  .spacer{flex:1;}
-  .btn{display:inline-flex;align-items:center;gap:5px;padding:7px 14px;
-    border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:opacity .15s;}
-  .btn:hover{opacity:.85;}
-  .btn-outline{background:#fff;color:var(--text);border:1px solid var(--border);}
-  .btn-primary{background:var(--purple);color:#fff;}
+  /* BUDGET BAR */
+  .budget-card{background:var(--card);border:0.5px solid var(--border);
+    border-radius:var(--radius);padding:18px 22px;}
+  .budget-header{display:flex;justify-content:space-between;margin-bottom:10px;font-size:13px;}
+  .budget-header .pct{font-weight:600;color:var(--teal);}
+  .bar-track{background:var(--gray-light);border-radius:6px;height:10px;overflow:hidden;}
+  .bar-fill{height:100%;border-radius:6px;background:var(--teal);transition:width .6s ease;}
+  .budget-footer{display:flex;justify-content:space-between;margin-top:8px;font-size:12px;color:var(--text-muted);}
 
-  /* KPI BOXES */
-  .kpi-strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:20px;}
-  .kbox{background:var(--card);border:0.5px solid var(--border);
-    border-radius:var(--radius);padding:14px 16px;
-    border-left:3px solid var(--accent,var(--teal));}
-  .kbox .l{font-size:11px;color:var(--text-muted);margin-bottom:4px;}
-  .kbox .v{font-size:20px;font-weight:700;color:var(--accent,var(--teal));}
-  .kbox .sub{font-size:11px;color:var(--text-muted);margin-top:2px;}
-  .kbox.adhoc{border-left-color:var(--orange);background:var(--orange-light);}
-  .kbox.adhoc .v{color:var(--orange);}
+  /* CONTROLS & FILTER HEADER */
+  .filter-bar {
+    display:flex;
+    gap:10px;
+    background:var(--card);
+    padding:12px 16px;
+    border:0.5px solid var(--border);
+    border-radius:var(--radius) var(--radius) 0 0;
+    align-items:center;
+    flex-wrap:wrap;
+  }
+  .filter-bar label {
+    font-size:12px;
+    font-weight:600;
+    color:var(--text-muted);
+    margin-right:4px;
+  }
+  .filter-bar select {
+    padding:6px 10px;
+    font-size:13px;
+    border-radius:6px;
+    border:1px solid var(--border);
+    background:var(--bg);
+    color:var(--text);
+    outline:none;
+    cursor:pointer;
+  }
+  .filter-bar select:focus {
+    border-color:var(--purple);
+  }
 
-  /* CHARTS */
-  .chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;}
-  .chart-card{background:var(--card);border:0.5px solid var(--border);
-    border-radius:var(--radius);padding:20px;}
-  .chart-card h3{font-size:13px;font-weight:600;color:var(--text);margin-bottom:2px;}
-  .chart-card .sub{font-size:11px;color:var(--text-muted);margin-bottom:14px;}
-  .chart-card canvas{max-height:230px;}
-  .chart-card.wide{grid-column:1/-1;}
+  /* DIVISION GRID */
+  .div-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;}
+  .div-card{background:var(--card);border:0.5px solid var(--border);
+    border-radius:var(--radius);padding:18px;cursor:pointer;
+    transition:box-shadow .15s,transform .1s;
+    border-top:3px solid var(--accent,var(--blue));
+    text-decoration:none;color:inherit;display:block;}
+  .div-card:hover{box-shadow:0 4px 16px rgba(0,0,0,.09);transform:translateY(-2px);}
+  .div-card .div-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;}
+  .div-card .div-code{font-size:18px;font-weight:700;color:var(--accent,var(--blue));}
+  .div-card .div-name{font-size:11px;color:var(--text-muted);margin-top:2px;line-height:1.4;}
+  .div-card .budget-pct{font-size:12px;font-weight:600;padding:2px 8px;
+    background:var(--accent-light,var(--blue-light));
+    color:var(--accent,var(--blue));border-radius:20px;}
+  .status-row{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0;}
+   
+  .badge{font-size:11px;padding:2px 8px;border-radius:20px;font-weight:500;display:inline-block;text-transform:capitalize;}
+  .badge.completed {background:var(--green-light);color:var(--green);}
+  .badge.ongoing   {background:var(--amber-light); color:var(--amber);}
+  .badge.delayed   {background:var(--red-light);   color:var(--red);}
+  .badge.notstarted, .badge.not_started{background:var(--gray-light);  color:var(--gray);}
+   
+  .div-bar-track{background:var(--gray-light);border-radius:4px;height:5px;margin-top:10px;}
+  .div-bar-fill{height:100%;border-radius:4px;background:var(--accent,var(--blue));}
 
-  /* SECTION */
-  .section-title{font-size:15px;font-weight:600;margin:24px 0 12px;
-    display:flex;align-items:center;gap:8px;}
-  .section-title .pill{font-size:11px;padding:2px 10px;border-radius:20px;
-    font-weight:600;background:var(--orange-light);color:var(--orange);}
-
-  /* TABLES */
-  .table-wrap{background:var(--card);border:0.5px solid var(--border);
-    border-radius:var(--radius);overflow-x:auto;margin-bottom:24px;}
-  .table-wrap.adhoc-table{border-color:var(--orange);}
+  /* APT TABLE */
+  .table-wrap{background:var(--card);border:0.5px solid var(--border);border-radius:0 0 var(--radius) var(--radius);overflow-x:auto;border-top:0;}
   table{width:100%;border-collapse:collapse;font-size:13px;}
   thead tr{background:var(--gray-light);}
-  thead.adhoc-head tr{background:var(--orange-light);}
-  th{padding:9px 13px;text-align:left;font-weight:600;font-size:11px;
-    color:var(--text-muted);white-space:nowrap;}
-  td{padding:9px 13px;border-top:0.5px solid var(--border);vertical-align:middle;}
-  tr.clickable:hover td{background:var(--blue-light);cursor:pointer;}
-  tr.adhoc-row td{background:var(--orange-light);}
-  tr.adhoc-row:hover td{background:#fde0c8;cursor:pointer;}
-  .totals-row td{font-weight:700;background:var(--gray-light);border-top:2px solid var(--border);}
+  th{padding:9px 14px;text-align:left;font-weight:600;font-size:12px;color:var(--text-muted);white-space:nowrap;}
+  td{padding:9px 14px;border-top:0.5px solid var(--border);vertical-align:middle;}
   .amount{font-variant-numeric:tabular-nums;white-space:nowrap;}
   .over{color:var(--red);font-weight:600;}
-
-  /* BADGES */
-  .badge{display:inline-block;font-size:11px;padding:2px 9px;border-radius:20px;font-weight:500;white-space:nowrap;}
-  .badge.Completed  {background:var(--green-light);color:var(--green);}
-  .badge.Ongoing    {background:var(--amber-light); color:var(--amber);}
-  .badge.Delayed    {background:var(--red-light);   color:var(--red);}
-  .badge.Not\ Started{background:var(--gray-light); color:var(--gray);}
-  .badge.adhoc      {background:var(--orange-light);color:var(--orange);font-weight:700;}
+  .totals-row td{font-weight:700;background:var(--gray-light);border-top:2px solid var(--border);}
   .div-pill{display:inline-block;font-size:11px;padding:2px 10px;border-radius:20px;font-weight:600;}
-  .revised-badge{font-size:10px;padding:2px 7px;border-radius:20px;
-    background:var(--purple-light);color:var(--purple);font-weight:600;margin-left:5px;}
+  .revised-badge{display:inline-block;font-size:10px;padding:2px 7px;border-radius:20px;
+    background:var(--purple-light);color:var(--purple);font-weight:600;margin-left:5px;vertical-align:middle;}
 
-  .pct-wrap{display:flex;align-items:center;gap:7px;}
-  .pct-track{flex:1;background:var(--gray-light);border-radius:4px;height:6px;min-width:50px;}
-  .pct-fill{height:100%;border-radius:4px;}
+  /* LOADING / ERROR */
+  .loading{text-align:center;padding:40px;color:var(--text-muted);font-size:14px;}
+  .err{background:var(--red-light);color:var(--red);border-radius:8px;padding:12px 16px;font-size:13px;}
 
-  .loading{text-align:center;padding:36px;color:var(--text-muted);}
-  .err-box{background:var(--red-light);color:var(--red);border-radius:8px;
-    padding:12px 16px;font-size:13px;margin-bottom:14px;}
-  .empty{text-align:center;padding:24px;color:var(--text-muted);font-size:13px;}
-
-  @media(max-width:720px){
-    .chart-grid{grid-template-columns:1fr;}
-    .chart-card.wide{grid-column:1;}
-    .kpi-strip{grid-template-columns:1fr 1fr;}
-  }
-  @media print{
-    nav,.filter-bar,.report-tabs,.btn{display:none!important;}
-    .rpanel{display:block!important;}
-    .page{padding:0;}
+  @media(max-width:600px){
+    .metrics{grid-template-columns:1fr 1fr;}
+    .div-grid{grid-template-columns:1fr;}
+    nav .brand span{display:none;}
+    .filter-bar{flex-direction:column;align-items:stretch;gap:8px;}
   }
 </style>
 </head>
 <body>
 
 <nav>
-  <div class="brand">ACC · DoPE <span>Performance Dashboard FY 2026–2027</span></div>
+  <div class="brand">
+    ACC · DoPE
+    <span>Performance Dashboard FY 2026–2027</span>
+  </div>
+  <div id="last-viewed"></div>
   <div class="nav-links">
-    <a href="index.html">Home</a>
-    <a href="reports.html" class="active">Reports</a>
+    <a href="index.html" class="active">Home</a>
+    <a href="reports.html">Reports</a>
+    <a href="auditlog.html">Activity Log</a>
   </div>
 </nav>
 
 <div class="page">
-  <div class="breadcrumb"><a href="index.html">Home</a> › Reports &amp; Analytics</div>
 
-  <div class="report-tabs">
-    <button class="rtab active" data-tab="apt">APT Overview</button>
-    <button class="rtab" data-tab="adhoc">⚡ Ad hoc</button>
-    <button class="rtab" data-tab="performance">Performance</button>
-    <button class="rtab" data-tab="financial">Financial</button>
-    <button class="rtab" data-tab="coverage">Coverage</button>
-    <button class="rtab" data-tab="sessions">Session log</button>
-  </div>
-
-  <div class="filter-bar">
-    <div><label>Division</label>
-      <select id="f-div">
-        <option value="">All divisions</option>
-        <option>ADMD</option><option>EAD</option>
-        <option>ED</option><option>PD</option>
-      </select>
-    </div>
-    <div><label>From</label><select id="f-from"></select></div>
-    <div><label>To</label>  <select id="f-to"></select></div>
-    <div class="spacer"></div>
-    <button class="btn btn-outline" id="btn-csv">⬇ Export CSV</button>
-    <button class="btn btn-primary"  id="btn-print">🖨 Print</button>
-  </div>
-
-  <div class="err-box" id="err" style="display:none"></div>
-
-  <!-- ══ TAB 1: APT OVERVIEW ══ -->
-  <div class="rpanel active" id="panel-apt">
-
-     <!-- Instruction block added here -->
-    <div style="background:var(--blue-light); border:1px solid var(--blue); padding:12px; border-radius:var(--radius); margin-bottom:20px; font-size:14px; color:var(--text);">
-      <strong>Navigation Tip:</strong> Click on your respective division below to add or manage <strong>KPIs, Activities, and Sessions</strong>.
-    </div>
-
-    <div class="kpi-strip" id="apt-kpis"><div class="loading">Loading…</div></div>
-    <div class="section-title">Annual Performance Targets — planned KPIs</div>
-    <div class="table-wrap">
-      <table>
-        <thead><tr>
-          <th>Division</th><th>KPI</th><th>Target</th>
-          <th>Budget (Nu.)</th><th>Actual (Nu.)</th><th>Balance (Nu.)</th>
-          <th>Planned</th><th>Ad hoc</th><th>Participants</th><th>Status</th><th>Used</th>
-        </tr></thead>
-        <tbody id="apt-body"><tr><td colspan="11" class="loading">Loading…</td></tr></tbody>
-      </table>
-    </div>
-    <div class="section-title">Revision history</div>
-    <div class="table-wrap">
-      <table>
-        <thead><tr><th>Division</th><th>KPI</th><th>Field</th>
-          <th>Original</th><th>Revised to</th><th>By</th><th>Date</th><th>Reason</th></tr></thead>
-        <tbody id="rev-body"><tr><td colspan="8" class="loading">Loading…</td></tr></tbody>
-      </table>
+  <div class="section">
+    <h2>Department overview</h2>
+    <div class="metrics" id="metrics">
+      <div class="loading">Loading…</div>
     </div>
   </div>
 
-  <!-- ══ TAB 2: AD HOC ══ -->
-  <div class="rpanel" id="panel-adhoc">
-    <div class="kpi-strip" id="adhoc-kpis"><div class="loading">Loading…</div></div>
-    <div class="chart-grid">
-      <div class="chart-card">
-        <h3>Ad hoc activities by division</h3>
-        <div class="sub">Count of unplanned activities per division</div>
-        <canvas id="chart-adhoc-div"></canvas>
+  <div class="section">
+    <div class="budget-card">
+      <div class="budget-header">
+        <span>Department budget utilisation</span>
+        <span class="pct" id="budget-pct">—</span>
       </div>
-      <div class="chart-card">
-        <h3>Ad hoc expenditure vs planned (Nu.)</h3>
-        <div class="sub">Actual spend — planned vs ad hoc per division</div>
-        <canvas id="chart-adhoc-exp"></canvas>
+      <div class="bar-track"><div class="bar-fill" id="budget-bar" style="width:0%"></div></div>
+      <div class="budget-footer">
+        <span id="budget-actual">Actual: Nu. —</span>
+        <span id="budget-balance">Balance: Nu. —</span>
+        <span id="budget-total">Allocated: Nu. —</span>
       </div>
     </div>
-    <div class="section-title">Ad hoc activities — under a KPI <span class="pill">⚡ Under KPI</span></div>
-    <div class="table-wrap adhoc-table">
-      <table>
-        <thead class="adhoc-head"><tr>
-          <th>#</th><th>Division</th><th>KPI</th><th>Activity</th>
-          <th>Reason</th><th>Status</th><th>Sessions</th>
-          <th>Participants</th><th>Reallocated from</th>
-          <th>Realloc. (Nu.)</th><th>Actual (Nu.)</th>
-        </tr></thead>
-        <tbody id="adhoc-kpi-body"><tr><td colspan="11" class="loading">Loading…</td></tr></tbody>
-      </table>
+  </div>
+
+  <div class="section">
+    <h2>Annual Performance Targets (APT) — FY 2026–2027</h2>
+     
+    <div class="filter-bar">
+      <div>
+        <label for="filter-div">Division:</label>
+        <select id="filter-div" onchange="filterAPT()">
+          <option value="ALL">All Divisions</option>
+          <option value="ADMD">ADMD</option>
+          <option value="EAD">EAD</option>
+          <option value="ED">ED</option>
+          <option value="PD">PD</option>
+        </select>
+      </div>
+      <div>
+        <label for="filter-status">Status:</label>
+        <select id="filter-status" onchange="filterAPT()">
+          <option value="ALL">All Statuses</option>
+          <option value="completed">Completed</option>
+          <option value="ongoing">Ongoing</option>
+          <option value="delayed">Delayed</option>
+          <option value="notstarted">Not Started</option>
+        </select>
+      </div>
     </div>
-    <div class="section-title">Ad hoc activities — standalone <span class="pill">⚡ Standalone</span></div>
-    <div class="table-wrap adhoc-table">
-      <table>
-        <thead class="adhoc-head"><tr>
-          <th>#</th><th>Division</th><th>Activity</th>
-          <th>Reason</th><th>Status</th><th>Sessions</th>
-          <th>Participants</th><th>Reallocated from</th>
-          <th>Realloc. (Nu.)</th><th>Actual (Nu.)</th>
-        </tr></thead>
-        <tbody id="adhoc-standalone-body"><tr><td colspan="10" class="loading">Loading…</td></tr></tbody>
-      </table>
-    </div>
-    <div class="section-title">Budget reallocation summary</div>
+
     <div class="table-wrap">
       <table>
-        <thead><tr>
-          <th>Division</th><th>Source activity (reallocated from)</th>
-          <th>Original budget (Nu.)</th><th>Total reallocated (Nu.)</th>
-          <th>Remaining (Nu.)</th><th>Ad hoc activities funded</th>
-        </tr></thead>
-        <tbody id="realloc-body"><tr><td colspan="6" class="loading">Loading…</td></tr></tbody>
+        <thead>
+          <tr>
+            <th>Division</th><th>KPI</th><th>Target</th>
+            <th>Budget (Nu. M)</th><th>Actual (Nu. M)</th><th>Balance (Nu. M)</th>
+            <th>Planned acts.</th><th>Ad hoc</th><th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="apt-body">
+          <tr><td colspan="9" class="loading">Loading…</td></tr>
+        </tbody>
       </table>
     </div>
   </div>
 
-  <!-- ══ TAB 3: PERFORMANCE ══ -->
-  <div class="rpanel" id="panel-performance">
-    <div class="kpi-strip" id="perf-kpis"><div class="loading">Loading…</div></div>
-    <div class="chart-grid">
-      <div class="chart-card">
-        <h3>Activity status by division</h3>
-        <div class="sub">Planned activities — stacked by status</div>
-        <canvas id="chart-status"></canvas>
-      </div>
-      <div class="chart-card">
-        <h3>KPI status overview</h3>
-        <div class="sub">Distribution of KPI statuses</div>
-        <canvas id="chart-kpi-status"></canvas>
-      </div>
-      <div class="chart-card wide">
-        <h3>Activity completion rate by KPI</h3>
-        <div class="sub">% of planned activities completed under each KPI</div>
-        <canvas id="chart-kpi-completion"></canvas>
-      </div>
-    </div>
-    <div class="section-title">Activity detail log</div>
-    <div class="table-wrap">
-      <table>
-        <thead><tr><th>Division</th><th>KPI</th><th>Activity</th><th>Type</th>
-          <th>Sessions</th><th>Status</th><th>Budget (Nu.)</th>
-          <th>Actual (Nu.)</th><th>Used</th></tr></thead>
-        <tbody id="act-body"><tr><td colspan="9" class="loading">Loading…</td></tr></tbody>
-      </table>
+  <div class="section">
+    <div style="display:flex;align-items:center;gap:10px;background:#FAEEDA;
+      border:1px solid #BA7517;border-radius:8px;padding:11px 16px;">
+      <span style="font-size:18px">⚠</span>
+      <span style="font-size:13px;color:#7A4D0F">
+        <strong>Reminder:</strong> Please enter all budget and expenditure figures in
+        <strong>Nu. Million</strong> — e.g. Nu. 1,500,000 = Nu. 1.500.
+      </span>
     </div>
   </div>
 
-  <!-- ══ TAB 4: FINANCIAL ══ -->
-  <div class="rpanel" id="panel-financial">
-    <div class="kpi-strip" id="fin-kpis"><div class="loading">Loading…</div></div>
-    <div class="chart-grid">
-      <div class="chart-card">
-        <h3>Monthly expenditure (Nu.)</h3>
-        <div class="sub">Planned vs ad hoc spend per month — stacked</div>
-        <canvas id="chart-monthly"></canvas>
-      </div>
-      <div class="chart-card">
-        <h3>Budget vs actual by division (Nu.)</h3>
-        <div class="sub">Allocated vs planned actual vs ad hoc actual</div>
-        <canvas id="chart-budget"></canvas>
-      </div>
-      <div class="chart-card wide">
-        <h3>Budget vs actual by KPI (Nu.)</h3>
-        <div class="sub">Horizontal — each KPI's utilisation including ad hoc</div>
-        <canvas id="chart-kpi-budget"></canvas>
-      </div>
-    </div>
-    <div class="section-title">Division financial summary</div>
-    <div class="table-wrap">
-      <table>
-        <thead><tr>
-          <th>Division</th><th>KPIs</th>
-          <th>Budget (Nu.)</th><th>Planned actual (Nu.)</th>
-          <th>Ad hoc actual (Nu.)</th><th>Total actual (Nu.)</th>
-          <th>Balance (Nu.)</th><th>Used</th>
-        </tr></thead>
-        <tbody id="fin-div-body"><tr><td colspan="8" class="loading">Loading…</td></tr></tbody>
-      </table>
+  <div class="section">
+    <h2>Divisions</h2>
+    <div class="div-grid" id="div-grid">
+      <div class="loading">Loading…</div>
     </div>
   </div>
 
-  <!-- ══ TAB 5: COVERAGE ══ -->
-  <div class="rpanel" id="panel-coverage">
-    <div class="kpi-strip" id="cov-kpis"><div class="loading">Loading…</div></div>
-    <div class="chart-grid">
-      <div class="chart-card">
-        <h3>Cumulative participant reach</h3>
-        <div class="sub">Total, male and female — by month</div>
-        <canvas id="chart-coverage"></canvas>
-      </div>
-      <div class="chart-card">
-        <h3>Sessions per month by division</h3>
-        <div class="sub">Activity volume trend across the FY</div>
-        <canvas id="chart-sessions-trend"></canvas>
-      </div>
-      <div class="chart-card wide">
-        <h3>Participants by division — planned vs ad hoc</h3>
-        <div class="sub">Total reach breakdown</div>
-        <canvas id="chart-participants"></canvas>
-      </div>
+  <div class="section">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <h2 style="margin:0">Recent activities</h2>
+      <a href="auditlog.html" style="font-size:13px;color:var(--purple);
+        text-decoration:none;font-weight:600">View full log →</a>
     </div>
-    <div class="section-title">Coverage summary by division</div>
-    <div class="table-wrap">
-      <table>
-        <thead><tr><th>Division</th><th>Sessions</th>
-          <th>Total participants</th><th>Male</th><th>Female</th><th>F %</th>
-          <th>Ad hoc participants</th></tr></thead>
-        <tbody id="cov-body"><tr><td colspan="7" class="loading">Loading…</td></tr></tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- ══ TAB 6: SESSION LOG ══ -->
-  <div class="rpanel" id="panel-sessions">
-    <div class="section-title">Full session log</div>
-    <div class="table-wrap">
-      <table>
-        <thead><tr>
-          <th>#</th><th>Type</th><th>Division</th><th>KPI</th><th>Activity</th>
-          <th>Date</th><th>Venue</th><th>Place</th><th>Audience</th>
-          <th>Total</th><th>Male</th><th>Female</th>
-          <th>Expenditure (Nu.)</th><th>Duration</th>
-          <th>Remarks</th><th>Entered by</th>
-        </tr></thead>
-        <tbody id="sess-body"><tr><td colspan="16" class="loading">Loading…</td></tr></tbody>
-      </table>
-    </div>
+    <div id="recent-log"><div class="loading">Loading…</div></div>
   </div>
 
 </div>
@@ -376,568 +251,297 @@
 const SUPA_URL = 'https://fiozcsxlnpvphrxwvzzy.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZpb3pjc3hsbnB2cGhyeHd2enp5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwNzkxNTYsImV4cCI6MjA5NjY1NTE1Nn0.1XZn61C23mE5LkltAC1VU57-iWySlJsy1_9-ZRAW1I8';
 
-const DIV_COLORS = {
-  ADMD:{bg:'#378ADD',light:'#E6F1FB'},
-  EAD: {bg:'#1D9E75',light:'#E1F5EE'},
-  ED:  {bg:'#D85A30',light:'#FAECE7'},
-  PD:  {bg:'#534AB7',light:'#EEEDFE'},
+const DIVISION_COLORS = {
+  ADMD:{accent:'#378ADD',light:'#E6F1FB'},
+  EAD: {accent:'#1D9E75',light:'#E1F5EE'},
+  ED:  {accent:'#D85A30',light:'#FAECE7'},
+  PD:  {accent:'#534AB7',light:'#EEEDFE'},
 };
 
-const FY_MONTHS=[];
-for(let m=6;m<12;m++) FY_MONTHS.push(`2026-${String(m+1).padStart(2,'0')}`);
-for(let m=0;m<6;m++)  FY_MONTHS.push(`2027-${String(m+1).padStart(2,'0')}`);
-const MLABELS=FY_MONTHS.map(m=>{ const[y,mo]=m.split('-'); return new Date(+y,+mo-1).toLocaleString('en',{month:'short',year:'2-digit'}); });
+// Internal caching variable for filtering datasets dynamically
+let globalKpiRows = [];
 
-['f-from','f-to'].forEach(id=>{
-  const sel=document.getElementById(id);
-  FY_MONTHS.forEach((m,i)=>{ const o=document.createElement('option'); o.value=m; o.textContent=MLABELS[i]; sel.appendChild(o); });
-});
-document.getElementById('f-to').value=FY_MONTHS[FY_MONTHS.length-1];
-
-let allDivisions=[], allKpis=[], allActivities=[], allAdhoc=[], allSessions=[], allRevisions=[];
-const charts={};
-
-function fmt(n){ return Number(n||0).toLocaleString('en-IN'); }
-function fmtDate(d){ if(!d) return '—'; return new Date(d).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}); }
-function showErr(m){ const e=document.getElementById('err'); e.textContent=m; e.style.display=m?'block':'none'; }
-
-async function api(path){
-  const r=await fetch(SUPA_URL+path,{headers:{apikey:SUPA_KEY,Authorization:'Bearer '+SUPA_KEY}});
+async function query(path){
+  const r=await fetch(SUPA_URL+path,{
+    headers:{apikey:SUPA_KEY,Authorization:'Bearer '+SUPA_KEY}
+  });
   if(!r.ok) throw new Error(await r.text());
   return r.json();
 }
 
-// TABS
-document.querySelectorAll('.rtab').forEach(t=>{
-  t.addEventListener('click',()=>{
-    document.querySelectorAll('.rtab').forEach(x=>x.classList.remove('active'));
-    document.querySelectorAll('.rpanel').forEach(x=>x.classList.remove('active'));
-    t.classList.add('active');
-    document.getElementById('panel-'+t.dataset.tab).classList.add('active');
-  });
-});
+function fmt(n){ return Number(n||0).toFixed(3); }
 
-// SELF-HEALING COLUMN PROPERTY MAPPER
-function getVal(obj, keys) {
-  if (!obj) return 0;
-  for (let key of keys) {
-    if (obj[key] !== undefined && obj[key] !== null) return obj[key];
-  }
-  return 0;
+function timeAgo(ts){
+  const diff=Math.floor((Date.now()-new Date(ts))/1000);
+  if(diff<60)    return 'just now';
+  if(diff<3600)  return Math.floor(diff/60)+'m ago';
+  if(diff<86400) return Math.floor(diff/3600)+'h ago';
+  return Math.floor(diff/86400)+'d ago';
 }
-const getSessions = (a) => getVal(a, ['session_count', 'total_sessions', 'sessions', 'session_num']);
-const getParticipants = (a) => getVal(a, ['total_participants', 'participants', 'participant_count', 'participants_total']);
-const getActual = (a) => getVal(a, ['total_actual', 'actual', 'actual_expenditure', 'total_expenditure', 'expenditure']);
-const getRealloc = (a) => getVal(a, ['realloc_amount', 'reallocated_amount', 'reallocated_budget', 'realloc_budget', 'budget_allocated']);
 
-// FILTERS
-function getF(){ return{div:document.getElementById('f-div').value, from:document.getElementById('f-from').value, to:document.getElementById('f-to').value}; }
-function fSess(all){ const{div,from,to}=getF(); return all.filter(s=>{ const m=s.session_date?.slice(0,7); return(!div||s._div===div)&&(!from||m>=from)&&(!to||m<=to); }); }
-function fActs(){ const{div}=getF(); return allActivities.filter(a=>!div||a.division_code===div); }
-function fAdhoc(){ const{div}=getF(); return allAdhoc.filter(a=>!div||a.division_code===div); }
-function fKpis(){ const{div}=getF(); return allKpis.filter(k=>!div||k.division_code===div); }
-function fDivs(){ const{div}=getF(); return allDivisions.filter(d=>!div||d.code===div); }
+function actionIcon(field){
+  if(!field) return '✎';
+  const f=field.toLowerCase();
+  if(f.includes('created'))  return '＋';
+  if(f.includes('session'))  return '📋';
+  if(f.includes('status'))   return '🔄';
+  if(f.includes('budget')||f.includes('expenditure')) return '💰';
+  if(f.includes('ad hoc'))   return '⚡';
+  return '✎';
+}
 
-['f-div','f-from','f-to'].forEach(id=>document.getElementById(id).addEventListener('change',render));
-
-// LOAD
-async function loadData(){
+// Global "Last Viewed" tracking
+async function trackVisit() {
   try {
-    [allDivisions,allKpis,allActivities,allAdhoc,allSessions,allRevisions]=await Promise.all([
-      api('/rest/v1/v_division_summary?select=*'),
-      api('/rest/v1/v_kpi_summary?select=*&order=division_code.asc,created_at.asc'),
-      api('/rest/v1/v_activity_detail?select=*&is_adhoc=eq.false&order=division_id.asc,created_at.asc'),
-      api('/rest/v1/v_adhoc_activities?select=*&order=division_id.asc,created_at.asc'),
-      api('/rest/v1/sessions?select=*,activities(is_adhoc,kpi_id,division_id,name,divisions(code),kpis(kpi_name))&order=session_date.asc'),
-      api('/rest/v1/kpi_revisions?select=*,kpis(kpi_name,divisions(code))&order=revised_at.desc'),
+    await fetch(SUPA_URL + '/rest/v1/dashboard_visits?id=eq.1', {
+      method: 'PATCH',
+      headers: {
+        apikey: SUPA_KEY,
+        Authorization: 'Bearer ' + SUPA_KEY,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify({ last_viewed_at: new Date().toISOString() })
+    });
+  } catch(e) { console.error("Visit tracking failed", e); }
+}
+
+async function loadStatus() {
+  try {
+    const data = await query('/rest/v1/dashboard_visits?id=eq.1&select=last_viewed_at');
+    if (data.length > 0) {
+      const time = new Date(data[0].last_viewed_at);
+      document.getElementById('last-viewed').textContent = 'Last viewed: ' + time.toLocaleString();
+    }
+  } catch(e) { console.error("Status load failed", e); }
+}
+
+async function load(){
+  trackVisit();
+  loadStatus();
+  try {
+    const [divRows,kpiRows]=await Promise.all([
+      query('/rest/v1/v_division_summary?select=*'),
+      query('/rest/v1/v_kpi_summary?select=*&order=division_code.asc,created_at.asc'),
     ]);
-    allSessions.forEach(s=>{
-      s._div    =s.activities?.divisions?.code||'?';
-      s._actName=s.activities?.name||'?';
-      s._kpiName=s.activities?.kpis?.kpi_name||'—';
-      s._isAdhoc=!!s.activities?.is_adhoc;
+
+    globalKpiRows = kpiRows;
+
+    let totKpis=0,totAct=0,totAdhoc=0,totComp=0,totOngoing=0,totDelayed=0,totNotStart=0;
+    let totBudget=0,totActual=0;
+    divRows.forEach(r=>{
+      totKpis     += +r.total_kpis;
+      totAct      += +r.total_activities;
+      totAdhoc    += +r.total_adhoc;
+      totComp     += +r.completed;
+      totOngoing  += +r.ongoing;
+      totDelayed  += +r.delayed;
+      totNotStart += +r.not_started;
+      totBudget   += +r.total_budget;
+      totActual   += +r.total_actual;
     });
 
-    allAdhoc.forEach(a => {
-      if (!a.division_code || a.division_code === '?') {
-        const matchingDiv = allDivisions.find(d => d.id === a.division_id || d.division_id === a.division_id || d.code === a.division_code);
-        a.division_code = matchingDiv ? matchingDiv.code : (a.division_code || '?');
-      }
-    });
+    const pct=totBudget>0?Math.round(totActual/totBudget*100):0;
+    const bal=totBudget-totActual;
 
-    allActivities.forEach(a => {
-      if (!a.division_code || a.division_code === '?') {
-        const matchingDiv = allDivisions.find(d => d.id === a.division_id || d.division_id === a.division_id || d.code === a.division_code);
-        a.division_code = matchingDiv ? matchingDiv.code : (a.division_code || '?');
-      }
-    });
+    document.getElementById('metrics').innerHTML=`
+      <div class="metric-card" style="--accent:var(--purple)">
+        <div class="label">Total KPIs</div><div class="value">${totKpis}</div>
+      </div>
+      <div class="metric-card" style="--accent:var(--teal)">
+        <div class="label">Planned activities</div><div class="value">${totAct}</div>
+      </div>
+      <div class="metric-card" style="--accent:var(--green)">
+        <div class="label">Completed</div><div class="value">${totComp}</div>
+        <div class="sub">${totAct?Math.round(totComp/totAct*100):0}% of planned</div>
+      </div>
+      <div class="metric-card" style="--accent:var(--amber)">
+        <div class="label">Ongoing</div><div class="value">${totOngoing}</div>
+      </div>
+      <div class="metric-card" style="--accent:var(--red)">
+        <div class="label">Delayed</div><div class="value">${totDelayed}</div>
+      </div>
+      <div class="metric-card" style="--accent:#C25A00;border-left-color:#C25A00">
+        <div class="label">Ad hoc activities</div>
+        <div class="value" style="color:#C25A00">${totAdhoc}</div>
+        <div class="sub">Unplanned / assigned</div>
+      </div>
+      <div class="metric-card" style="--accent:var(--blue)">
+        <div class="label">Total budget (Nu. M)</div>
+        <div class="value" style="font-size:18px">Nu. ${fmt(totBudget)}</div>
+      </div>
+      <div class="metric-card" style="--accent:var(--teal)">
+        <div class="label">Actual expenditure (Nu. M)</div>
+        <div class="value" style="font-size:18px">Nu. ${fmt(totActual)}</div>
+        <div class="sub">${pct}% utilised</div>
+      </div>
+      <div class="metric-card" style="--accent:${bal<0?'var(--red)':'var(--gray)'}">
+        <div class="label">Balance (Nu. M)</div>
+        <div class="value" style="font-size:18px;color:${bal<0?'var(--red)':'inherit'}">Nu. ${fmt(bal)}</div>
+      </div>`;
 
-    render();
-  } catch(e){ showErr('Error: '+e.message); }
+    document.getElementById('budget-pct').textContent    = pct+'%';
+    document.getElementById('budget-bar').style.width    = Math.min(pct,100)+'%';
+    document.getElementById('budget-bar').style.background = pct>100?'var(--red)':'var(--teal)';
+    document.getElementById('budget-actual').textContent  = 'Actual: Nu. '+fmt(totActual)+' M';
+    document.getElementById('budget-balance').textContent = 'Balance: Nu. '+fmt(bal)+' M';
+    document.getElementById('budget-total').textContent   = 'Allocated: Nu. '+fmt(totBudget)+' M';
+
+    renderAPT(globalKpiRows);
+
+    document.getElementById('div-grid').innerHTML=divRows.map(r=>{
+      const c=DIVISION_COLORS[r.code]||{accent:'#378ADD',light:'#E6F1FB'};
+      const dp=r.total_budget>0?Math.round(r.total_actual/r.total_budget*100):0;
+      return `
+        <a class="div-card" href="division.html?div=${r.code}"
+           style="--accent:${c.accent};--accent-light:${c.light}">
+          <div class="div-header">
+            <div>
+              <div class="div-code">${r.code}</div>
+              <div class="div-name">${r.name}</div>
+            </div>
+            <div class="budget-pct">${dp}% budget</div>
+          </div>
+          <div class="status-row">
+            <span style="font-size:11px;color:var(--text-muted)">${r.total_kpis} KPI${r.total_kpis!=1?'s':''}</span>
+            <span class="badge completed">${r.completed} Done</span>
+            <span class="badge ongoing">${r.ongoing} Ongoing</span>
+            ${+r.delayed>0?`<span class="badge delayed">${r.delayed} Delayed</span>`:''}
+            ${+r.total_adhoc>0?`<span style="font-size:11px;padding:2px 8px;border-radius:20px;background:#FDF0E6;color:#C25A00;font-weight:600">⚡ ${r.total_adhoc} ad hoc</span>`:''}
+          </div>
+          <div class="div-bar-track">
+            <div class="div-bar-fill" style="width:${Math.min(dp,100)}%"></div>
+          </div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:6px">
+            Nu. ${fmt(r.total_actual)} M of Nu. ${fmt(r.total_budget)} M
+          </div>
+        </a>`;
+    }).join('');
+
+  } catch(e){
+    document.getElementById('metrics').innerHTML=`<div class="err">Error loading data: ${e.message}</div>`;
+  }
 }
 
-function render(){
-  const sess=fSess(allSessions), plannedSess=sess.filter(s=>!s._isAdhoc), adhocSess=sess.filter(s=>s._isAdhoc);
-  const acts=fActs(), adhoc=fAdhoc(), kpis=fKpis(), divs=fDivs();
-  renderAPT(kpis,sess);
-  renderAdhoc(adhoc,adhocSess,acts,divs,plannedSess);
-  renderPerformance(kpis,acts,divs);
-  renderFinancial(divs,kpis,sess,plannedSess,adhocSess);
-  renderCoverage(divs,sess,adhocSess);
-  renderSessionLog(sess);
+function filterAPT() {
+  const selectedDiv = document.getElementById('filter-div').value;
+  const selectedStatus = document.getElementById('filter-status').value;
+
+  const filtered = globalKpiRows.filter(k => {
+    const matchesDiv = (selectedDiv === 'ALL' || k.division_code === selectedDiv);
+    const matchesStatus = (selectedStatus === 'ALL' || k.status === selectedStatus);
+    return matchesDiv && matchesStatus;
+  });
+
+  renderAPT(filtered);
 }
 
-// HELPERS
-function destroyChart(id){ if(charts[id]){ charts[id].destroy(); delete charts[id]; } }
-const COPTS={responsive:true,maintainAspectRatio:true,
-  plugins:{legend:{labels:{font:{size:11},boxWidth:12}}},
-  scales:{x:{ticks:{font:{size:11}}},y:{ticks:{font:{size:11}}}}};
-function pctBar(pct,color){ return `<div class="pct-wrap"><div class="pct-track"><div class="pct-fill" style="width:${Math.min(pct,100)}%;background:${pct>100?'var(--red)':color}"></div></div><span style="font-size:12px;font-weight:600;min-width:34px">${pct}%</span></div>`; }
-function divPill(code){ const c=DIV_COLORS[code]||{bg:'#888',light:'#eee'}; return `<span class="div-pill" style="background:${c.light};color:${c.bg}">${code}</span>`; }
-
-// ══ TAB 1: APT ══
-function renderAPT(kpis,sess){
-  const totBud=kpis.reduce((a,k)=>a+ +k.budget_allocated,0);
-  const totAct=kpis.reduce((a,k)=>a+ +k.total_actual,0);
-  const bal=totBud-totAct, pct=totBud>0?Math.round(totAct/totBud*100):0;
-  const adhocUnderKpi=allAdhoc.filter(a=>a.kpi_id);
-  document.getElementById('apt-kpis').innerHTML=`
-    <div class="kbox" style="--accent:var(--purple)"><div class="l">Total KPIs</div><div class="v">${kpis.length}</div></div>
-    <div class="kbox" style="--accent:var(--blue)"><div class="l">Budget (Nu.)</div><div class="v" style="font-size:15px">Nu. ${fmt(totBud)}</div></div>
-    <div class="kbox" style="--accent:var(--teal)"><div class="l">Actual (Nu.)</div><div class="v" style="font-size:15px">Nu. ${fmt(totAct)}</div><div class="sub">${pct}% utilised</div></div>
-    <div class="kbox" style="--accent:${bal<0?'var(--red)':'var(--gray)'}"><div class="l">Balance (Nu.)</div><div class="v" style="font-size:15px;color:${bal<0?'var(--red)':'inherit'}">Nu. ${fmt(bal)}</div></div>
-    <div class="kbox" style="--accent:var(--green)"><div class="l">KPIs completed</div><div class="v">${kpis.filter(k=>k.status==='Completed').length} / ${kpis.length}</div></div>
-    <div class="kbox adhoc"><div class="l">Ad hoc under KPIs</div><div class="v">${adhocUnderKpi.length}</div><div class="sub">Linked to a KPI</div></div>`;
-
+function renderAPT(kpis){
   const tb=document.getElementById('apt-body');
-  if(!kpis.length){tb.innerHTML=`<tr><td colspan="11" class="empty">No KPIs yet.</td></tr>`;return;}
-  let tBud=0,tActual=0,tActs=0,tAdhocCount=0,tPart=0;
+  if(!kpis.length){
+    tb.innerHTML=`<tr><td colspan="9" style="text-align:center;padding:24px;color:var(--text-muted)">No matching records found. Try adjusting filters.</td></tr>`;
+    return;
+  }
+  let tBud=0,tAct=0,tActs=0;
   const grouped={};
-  kpis.forEach(k=>{ if(!grouped[k.division_code]) grouped[k.division_code]=[]; grouped[k.division_code].push(k); });
+  
+  kpis.forEach(k=>{ 
+    if(!grouped[k.division_code]) grouped[k.division_code]=[]; 
+    grouped[k.division_code].push(k); 
+  });
+  
   let rows='';
   Object.entries(grouped).forEach(([div,dKpis])=>{
-    const c=DIV_COLORS[div]||{bg:'#888',light:'#eee'};
+    const c=DIVISION_COLORS[div]||{accent:'#378ADD',light:'#E6F1FB'};
     dKpis.forEach((k,i)=>{
       const bal=+k.budget_allocated - +k.total_actual;
-      const p=k.budget_allocated>0?Math.round(k.total_actual/k.budget_allocated*100):0;
       const revised=!!k.original_target||!!k.original_budget;
-      tBud+= +k.budget_allocated; tActual+= +k.total_actual;
-      tActs+= +k.total_activities; tAdhocCount+= +k.total_adhoc||0;
-      tPart+= +k.total_participants;
+      tBud+= +k.budget_allocated; tAct+= +k.total_actual; tActs+= +k.total_activities;
       rows+=`<tr>
-        ${i===0?`<td rowspan="${dKpis.length}" style="vertical-align:middle">${divPill(div)}</td>`:''}
+        ${i===0?`<td rowspan="${dKpis.length}" style="vertical-align:middle">
+          <span class="div-pill" style="background:${c.light};color:${c.accent}">${div}</span>
+        </td>`:''}
         <td>${k.kpi_name}${revised?`<span class="revised-badge">Revised</span>`:''}</td>
-        <td style="font-size:12px;color:var(--text-muted);max-width:160px">${k.target}</td>
+        <td style="font-size:12px;color:var(--text-muted);max-width:200px">${k.target}</td>
         <td class="amount">Nu. ${fmt(k.budget_allocated)}</td>
         <td class="amount">Nu. ${fmt(k.total_actual)}</td>
         <td class="amount ${bal<0?'over':''}">Nu. ${fmt(bal)}</td>
         <td style="text-align:center">${k.total_activities}</td>
-        <td style="text-align:center">${+k.total_adhoc>0?`<span class="badge adhoc">⚡ ${k.total_adhoc}</span>`:'—'}</td>
-        <td style="text-align:center">${fmt(k.total_participants)}</td>
-        <td><span class="badge ${k.status}">${k.status}</span></td>
-        <td>${pctBar(p,c.bg)}</td>
+        <td style="text-align:center">${+k.total_adhoc>0
+          ?`<span style="font-size:11px;padding:2px 8px;border-radius:20px;background:#FDF0E6;color:#C25A00;font-weight:600">⚡ ${k.total_adhoc}</span>`
+          :'<span style="color:var(--text-muted)">—</span>'}</td>
+        <td><span class="badge ${k.status}">${k.status === 'notstarted' ? 'Not Started' : k.status}</span></td>
       </tr>`;
     });
   });
-  const tBal=tBud-tActual,tP=tBud>0?Math.round(tActual/tBud*100):0;
+  const tBal=tBud-tAct, tPct=tBud>0?Math.round(tAct/tBud*100):0;
   rows+=`<tr class="totals-row">
-    <td colspan="3">Total</td>
-    <td class="amount">Nu. ${fmt(tBud)}</td><td class="amount">Nu. ${fmt(tActual)}</td>
+    <td colspan="3">Filter total</td>
+    <td class="amount">Nu. ${fmt(tBud)}</td>
+    <td class="amount">Nu. ${fmt(tAct)}</td>
     <td class="amount ${tBal<0?'over':''}">Nu. ${fmt(tBal)}</td>
     <td style="text-align:center">${tActs}</td>
-    <td style="text-align:center">${tAdhocCount>0?`⚡ ${tAdhocCount}`:'—'}</td>
-    <td style="text-align:center">${fmt(tPart)}</td><td></td>
-    <td><strong>${tP}%</strong></td></tr>`;
+    <td></td>
+    <td><strong>${tPct}% used</strong></td>
+  </tr>`;
   tb.innerHTML=rows;
-
-  const rb=document.getElementById('rev-body');
-  const revs=allRevisions.filter(r=>!getF().div||r.kpis?.divisions?.code===getF().div);
-  if(!revs.length){rb.innerHTML=`<tr><td colspan="8" class="empty">No revisions recorded.</td></tr>`;return;}
-  rb.innerHTML=revs.map(r=>`<tr>
-    <td>${divPill(r.kpis?.divisions?.code||'?')}</td>
-    <td>${r.kpis?.kpi_name||'—'}</td><td>${r.field_changed}</td>
-    <td style="text-decoration:line-through;color:var(--red)">${r.old_value||'—'}</td>
-    <td style="color:var(--green);font-weight:600">${r.new_value||'—'}</td>
-    <td>${r.revised_by}</td><td>${fmtDate(r.revised_at)}</td>
-    <td style="font-size:12px;color:var(--text-muted)">${r.revision_reason||'—'}</td>
-  </tr>`).join('');
 }
 
-// ══ TAB 2: AD HOC ══
-function renderAdhoc(adhoc,adhocSess,plannedActs,divs,plannedSess){
-  // Map dynamic session statistics to each ad hoc activity record
-  adhoc.forEach(a => {
-    const actSessions = adhocSess.filter(s => s.activity_id === a.id);
-    a._sessionsCount = actSessions.length;
-    a._participantsCount = actSessions.reduce((sum, s) => sum + +s.participants_total, 0);
-    a._actualExpenditure = actSessions.reduce((sum, s) => sum + +s.expenditure, 0);
-  });
-
-  const totAdhoc=adhoc.length;
-  const totExp=adhoc.reduce((a,x)=>a+ x._actualExpenditure,0);
-  const totRealloc=adhoc.reduce((a,x)=>a+ +getRealloc(x),0);
-  const totP=adhoc.reduce((a,x)=>a+ x._participantsCount,0);
-  const underKpi=adhoc.filter(a=>a.kpi_id);
-  const standalone=adhoc.filter(a=>!a.kpi_id);
-
-  document.getElementById('adhoc-kpis').innerHTML=`
-    <div class="kbox adhoc"><div class="l">Total ad hoc</div><div class="v">${totAdhoc}</div></div>
-    <div class="kbox adhoc"><div class="l">Under a KPI</div><div class="v">${underKpi.length}</div></div>
-    <div class="kbox adhoc"><div class="l">Standalone</div><div class="v">${standalone.length}</div></div>
-    <div class="kbox adhoc"><div class="l">Total actual (Nu.)</div><div class="v" style="font-size:15px">Nu. ${fmt(totExp)}</div></div>
-    <div class="kbox adhoc"><div class="l">Total reallocated (Nu.)</div><div class="v" style="font-size:15px">Nu. ${fmt(totRealloc)}</div></div>
-    <div class="kbox adhoc"><div class="l">Participants reached</div><div class="v">${fmt(totP)}</div></div>`;
-
-  destroyChart('adhoc-div');
-  const divCodes=['ADMD','EAD','ED','PD'].filter(d=>!getF().div||d===getF().div);
-  charts['adhoc-div']=new Chart(document.getElementById('chart-adhoc-div'),{type:'bar',
-    data:{labels:divCodes,datasets:[
-      {label:'Under KPI', data:divCodes.map(d=>adhoc.filter(a=>a.division_code===d&&a.kpi_id).length), backgroundColor:'#C25A00CC'},
-      {label:'Standalone',data:divCodes.map(d=>adhoc.filter(a=>a.division_code===d&&!a.kpi_id).length),backgroundColor:'#C25A0055'},
-    ]},
-    options:{...COPTS,scales:{x:{stacked:true,ticks:{font:{size:11}}},y:{stacked:true,ticks:{font:{size:11},stepSize:1}}}}
-  });
-
-  destroyChart('adhoc-exp');
-  charts['adhoc-exp']=new Chart(document.getElementById('chart-adhoc-exp'),{type:'bar',
-    data:{labels:divCodes,datasets:[
-      {label:'Planned actual',data:divCodes.map(d=>plannedSess.filter(s=>s._div===d).reduce((a,s)=>a+ +s.expenditure,0)),backgroundColor:'#378ADDCC'},
-      {label:'Ad hoc actual', data:divCodes.map(d=>adhocSess.filter(s=>s._div===d).reduce((a,s)=>a+ +s.expenditure,0)),  backgroundColor:'#C25A00CC'},
-    ]},
-    options:{...COPTS,scales:{x:{ticks:{font:{size:11}}},y:{ticks:{font:{size:11},callback:v=>'Nu.'+fmt(v)}}}}
-  });
-
-  // Under KPI table
-  const tb1=document.getElementById('adhoc-kpi-body');
-  tb1.innerHTML=underKpi.length?underKpi.map((a,i)=>`<tr class="adhoc-row clickable" onclick="location.href='activity.html?id=${a.id}'">
-    <td>${i+1}</td><td>${divPill(a.division_code)}</td>
-    <td style="font-size:12px;color:var(--text-muted)">${a.kpi_name||'—'}</td>
-    <td style="font-weight:500">${a.name}</td>
-    <td style="font-size:12px;max-width:160px;white-space:normal">${a.adhoc_reason||'—'}</td>
-    <td><span class="badge ${a.status}">${a.status}</span></td>
-    <td style="text-align:center">${a._sessionsCount}</td>
-    <td>${fmt(a._participantsCount)}</td>
-    <td style="font-size:12px">${a.realloc_from_name||'—'}</td>
-    <td class="amount">Nu. ${fmt(getRealloc(a))}</td>
-    <td class="amount">Nu. ${fmt(a._actualExpenditure)}</td>
-  </tr>`).join('')
-  :`<tr><td colspan="11" class="empty">No ad hoc activities linked to a KPI.</td></tr>`;
-
-  // Standalone table
-  const tb2=document.getElementById('adhoc-standalone-body');
-  tb2.innerHTML=standalone.length?standalone.map((a,i)=>`<tr class="adhoc-row clickable" onclick="location.href='activity.html?id=${a.id}'">
-    <td>${i+1}</td><td>${divPill(a.division_code)}</td>
-    <td style="font-weight:500">${a.name}</td>
-    <td style="font-size:12px;max-width:160px;white-space:normal">${a.adhoc_reason||'—'}</td>
-    <td><span class="badge ${a.status}">${a.status}</span></td>
-    <td style="text-align:center">${a._sessionsCount}</td>
-    <td>${fmt(a._participantsCount)}</td>
-    <td style="font-size:12px">${a.realloc_from_name||'—'}</td>
-    <td class="amount">Nu. ${fmt(getRealloc(a))}</td>
-    <td class="amount">Nu. ${fmt(a._actualExpenditure)}</td>
-  </tr>`).join('')
-  :`<tr><td colspan="10" class="empty">No standalone ad hoc activities.</td></tr>`;
-
-  // Reallocation summary
-  const tb3=document.getElementById('realloc-body');
-  const srcMap={};
-  adhoc.forEach(a=>{
-    if(!a.realloc_from_id) return;
-    const key=a.realloc_from_id;
-    if(!srcMap[key]) srcMap[key]={name:a.realloc_from_name||'Unknown',div:a.division_code,count:0,totalRealloc:0,srcBudget:0};
-    srcMap[key].count++;
-    srcMap[key].totalRealloc+= +getRealloc(a);
-  });
-  plannedActs.forEach(a=>{ if(srcMap[a.id]){ srcMap[a.id].srcBudget=+a.budget_allocated; } });
-  const srcRows=Object.entries(srcMap);
-  tb3.innerHTML=srcRows.length?srcRows.map(([id,s])=>{
-    const remaining=s.srcBudget-s.totalRealloc;
-    return `<tr>
-      <td>${divPill(s.div)}</td>
-      <td style="font-weight:500">${s.name}</td>
-      <td class="amount">Nu. ${fmt(s.srcBudget)}</td>
-      <td class="amount" style="color:var(--orange);font-weight:600">Nu. ${fmt(s.totalRealloc)}</td>
-      <td class="amount ${remaining<0?'over':''}">Nu. ${fmt(remaining)}</td>
-      <td style="text-align:center">${s.count}</td>
-    </tr>`;
-  }).join(''):`<tr><td colspan="6" class="empty">No reallocation data.</td></tr>`;
+async function loadRecentLog(){
+  const el=document.getElementById('recent-log');
+  try {
+    const rows=await query('/rest/v1/v_audit_log?select=*&limit=8');
+    if(!rows.length){
+      el.innerHTML=`<div style="text-align:center;padding:24px;color:var(--text-muted);
+        font-size:13px;background:var(--card);border-radius:var(--radius);
+        border:0.5px solid var(--border)">
+        No activity recorded yet. Start by adding KPIs in each division.</div>`;
+      return;
+    }
+    el.innerHTML=`
+      <div style="background:var(--card);border:0.5px solid var(--border);
+        border-radius:var(--radius);overflow:hidden;">
+        ${rows.map((r,i)=>{
+          const c=DIVISION_COLORS[r.division_code]||{accent:'#888',light:'#eee'};
+          const divPill=r.division_code
+            ?`<span style="font-size:10px;padding:1px 8px;border-radius:20px;font-weight:600;
+                background:${c.light};color:${c.accent};margin-right:6px">${r.division_code}</span>`:'';
+          const actName=r.activity_name
+            ?`<span style="font-weight:600">${r.activity_name}</span>`
+            :`<span style="color:var(--text-muted)">—</span>`;
+          const kpiName=r.kpi_name
+            ?`<span style="color:var(--text-muted)"> · ${r.kpi_name}</span>`:'';
+          const changeDetail=r.old_value
+            ?`<span style="color:var(--red);text-decoration:line-through;margin-right:4px">${r.old_value}</span>
+              <span style="color:var(--green);font-weight:500">${r.new_value||'—'}</span>`
+            :`<span style="color:var(--text-muted)">${r.new_value||'—'}</span>`;
+          return `
+            <div style="display:flex;align-items:flex-start;gap:12px;padding:12px 16px;
+              ${i<rows.length-1?'border-bottom:0.5px solid var(--border)':''}">
+              <div style="font-size:18px;margin-top:1px;min-width:24px;text-align:center">
+                ${actionIcon(r.field_changed)}
+              </div>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:13px;line-height:1.5">${divPill}${actName}${kpiName}</div>
+                <div style="font-size:12px;color:var(--text-muted);margin-top:2px">
+                  <strong style="color:var(--text)">${r.updated_by||'Unknown'}</strong>
+                  · ${r.field_changed||''}
+                  · ${changeDetail}
+                </div>
+              </div>
+              <div style="font-size:11px;color:var(--text-muted);white-space:nowrap;margin-top:2px">
+                ${timeAgo(r.updated_at)}
+              </div>
+            </div>`;
+        }).join('')}
+      </div>`;
+  } catch(e){
+    el.innerHTML=`<div class="err">Error loading activity log: ${e.message}</div>`;
+  }
 }
 
-// ══ TAB 3: PERFORMANCE ══
-function renderPerformance(kpis,acts,divs){
-  const done=acts.filter(a=>a.status==='Completed').length, total=acts.length;
-  document.getElementById('perf-kpis').innerHTML=`
-    <div class="kbox" style="--accent:var(--teal)"><div class="l">Planned activities</div><div class="v">${total}</div></div>
-    <div class="kbox" style="--accent:var(--green)"><div class="l">Completed</div><div class="v">${done}</div><div class="sub">${total?Math.round(done/total*100):0}% rate</div></div>
-    <div class="kbox" style="--accent:var(--amber)"><div class="l">Ongoing</div><div class="v">${acts.filter(a=>a.status==='Ongoing').length}</div></div>
-    <div class="kbox" style="--accent:var(--red)"><div class="l">Delayed</div><div class="v">${acts.filter(a=>a.status==='Delayed').length}</div></div>
-    <div class="kbox" style="--accent:var(--gray)"><div class="l">Not started</div><div class="v">${acts.filter(a=>a.status==='Not Started').length}</div></div>`;
-
-  destroyChart('status');
-  charts.status=new Chart(document.getElementById('chart-status'),{type:'bar',
-    data:{labels:divs.map(d=>d.code),datasets:[
-      {label:'Completed', data:divs.map(d=>+d.completed),   backgroundColor:'#639922CC',stack:'s'},
-      {label:'Ongoing',   data:divs.map(d=>+d.ongoing),     backgroundColor:'#BA7517CC',stack:'s'},
-      {label:'Delayed',   data:divs.map(d=>+d.delayed),     backgroundColor:'#A32D2DCC',stack:'s'},
-      {label:'Not started',data:divs.map(d=>+d.not_started),backgroundColor:'#5F5E5ACC',stack:'s'},
-    ]},
-    options:{...COPTS,scales:{x:{stacked:true,ticks:{font:{size:11}}},y:{stacked:true,ticks:{font:{size:11}}}}}
-  });
-
-  destroyChart('kpi-status');
-  const ks={Completed:0,Ongoing:0,Delayed:0,'Not Started':0};
-  kpis.forEach(k=>{ if(ks[k.status]!==undefined) ks[k.status]++; });
-  charts['kpi-status']=new Chart(document.getElementById('chart-kpi-status'),{type:'doughnut',
-    data:{labels:Object.keys(ks),datasets:[{data:Object.values(ks),
-      backgroundColor:['#639922CC','#BA7517CC','#A32D2DCC','#5F5E5ACC'],borderWidth:2}]},
-    options:{responsive:true,maintainAspectRatio:true,plugins:{legend:{labels:{font:{size:11},boxWidth:12}}}}
-  });
-
-  destroyChart('kpi-completion');
-  charts['kpi-completion']=new Chart(document.getElementById('chart-kpi-completion'),{type:'bar',
-    data:{labels:kpis.map(k=>k.kpi_name.length>32?k.kpi_name.slice(0,30)+'…':k.kpi_name),
-      datasets:[{label:'% completed',
-        data:kpis.map(k=>k.total_activities>0?Math.round(k.completed/k.total_activities*100):0),
-        backgroundColor:kpis.map(k=>(DIV_COLORS[k.division_code]?.bg||'#888')+'CC')}]},
-    options:{indexAxis:'y',...COPTS,scales:{x:{max:100,ticks:{font:{size:11},callback:v=>v+'%'}},y:{ticks:{font:{size:10}}}}}
-  });
-
-  const tb=document.getElementById('act-body');
-  tb.innerHTML=acts.length?acts.map(a=>{
-    const p=a.budget_allocated>0?Math.round(getActual(a)/a.budget_allocated*100):0;
-    const c=DIV_COLORS[a.division_code]||{bg:'#888'};
-    return `<tr class="clickable" onclick="location.href='activity.html?id=${a.id}'">
-      <td>${divPill(a.division_code)}</td>
-      <td style="font-size:12px;color:var(--text-muted)">${a.kpi_name||'—'}</td>
-      <td style="font-weight:500">${a.name}</td>
-      <td><span style="font-size:11px;color:var(--text-muted)">Planned</span></td>
-      <td style="text-align:center">${getSessions(a)}</td>
-      <td><span class="badge ${a.status}">${a.status}</span></td>
-      <td class="amount">Nu. ${fmt(a.budget_allocated)}</td>
-      <td class="amount">Nu. ${fmt(getActual(a))}</td>
-      <td>${pctBar(p,c.bg)}</td>
-    </tr>`;
-  }).join(''):`<tr><td colspan="9" class="empty">No activities.</td></tr>`;
-}
-
-// ══ TAB 4: FINANCIAL ══
-function renderFinancial(divs,kpis,sess,plannedSess,adhocSess){
-  const{from,to}=getF();
-  const totBud=divs.reduce((a,d)=>a+ +d.total_budget,0);
-  const totPlanned=plannedSess.reduce((a,s)=>a+ +s.expenditure,0);
-  const totAdhocExp=adhocSess.reduce((a,s)=>a+ +s.expenditure,0);
-  const totAct=totPlanned+totAdhocExp;
-  const bal=totBud-totAct, pct=totBud>0?Math.round(totAct/totBud*100):0;
-  document.getElementById('fin-kpis').innerHTML=`
-    <div class="kbox" style="--accent:var(--blue)"><div class="l">Budget (Nu.)</div><div class="v" style="font-size:15px">Nu. ${fmt(totBud)}</div></div>
-    <div class="kbox" style="--accent:var(--teal)"><div class="l">Planned actual (Nu.)</div><div class="v" style="font-size:15px">Nu. ${fmt(totPlanned)}</div></div>
-    <div class="kbox adhoc"><div class="l">Ad hoc actual (Nu.)</div><div class="v" style="font-size:15px">Nu. ${fmt(totAdhocExp)}</div></div>
-    <div class="kbox" style="--accent:var(--purple)"><div class="l">Total actual (Nu.)</div><div class="v" style="font-size:15px">Nu. ${fmt(totAct)}</div><div class="sub">${pct}% of budget</div></div>
-    <div class="kbox" style="--accent:${bal<0?'var(--red)':'var(--gray)'}"><div class="l">Balance (Nu.)</div><div class="v" style="font-size:15px;color:${bal<0?'var(--red)':'inherit'}">Nu. ${fmt(bal)}</div></div>`;
-
-  const months=FY_MONTHS.filter(m=>m>=from&&m<=to);
-  const labels=months.map(m=>MLABELS[FY_MONTHS.indexOf(m)]);
-
-  destroyChart('monthly');
-  charts.monthly=new Chart(document.getElementById('chart-monthly'),{type:'bar',
-    data:{labels,datasets:[
-      ...['ADMD','EAD','ED','PD'].filter(d=>!getF().div||d===getF().div).map(dc=>({
-        label:`${dc} planned`,
-        data:months.map(mo=>plannedSess.filter(s=>s._div===dc&&s.session_date?.slice(0,7)===mo).reduce((a,s)=>a+ +s.expenditure,0)),
-        backgroundColor:(DIV_COLORS[dc]?.bg||'#888')+'99',stack:'s',
-      })),
-      ...['ADMD','EAD','ED','PD'].filter(d=>!getF().div||d===getF().div).map(dc=>({
-        label:`${dc} ad hoc`,
-        data:months.map(mo=>adhocSess.filter(s=>s._div===dc&&s.session_date?.slice(0,7)===mo).reduce((a,s)=>a+ +s.expenditure,0)),
-        backgroundColor:'#C25A00CC',stack:'s',
-        borderTop:'2px dashed #fff',
-      })),
-    ]},
-    options:{...COPTS,scales:{x:{stacked:true,ticks:{font:{size:11}}},y:{stacked:true,ticks:{font:{size:11},callback:v=>'Nu.'+fmt(v)}}}}
-  });
-
-  destroyChart('budget');
-  charts.budget=new Chart(document.getElementById('chart-budget'),{type:'bar',
-    data:{labels:divs.map(d=>d.code),datasets:[
-      {label:'Allocated',     data:divs.map(d=>+d.total_budget),backgroundColor:'#378ADD55'},
-      {label:'Planned actual',data:divs.map(d=>plannedSess.filter(s=>s._div===d.code).reduce((a,s)=>a+ +s.expenditure,0)),backgroundColor:'#1D9E75CC'},
-      {label:'Ad hoc actual', data:divs.map(d=>adhocSess.filter(s=>s._div===d.code).reduce((a,s)=>a+ +s.expenditure,0)),backgroundColor:'#C25A00CC'},
-    ]},
-    options:{...COPTS,scales:{x:{ticks:{font:{size:11}}},y:{ticks:{font:{size:11},callback:v=>'Nu.'+fmt(v)}}}}
-  });
-
-  destroyChart('kpi-budget');
-  charts['kpi-budget']=new Chart(document.getElementById('chart-kpi-budget'),{type:'bar',
-    data:{labels:kpis.map(k=>k.kpi_name.length>36?k.kpi_name.slice(0,34)+'…':k.kpi_name),
-      datasets:[
-        {label:'Allocated',data:kpis.map(k=>+k.budget_allocated),backgroundColor:'#378ADD55'},
-        {label:'Actual',   data:kpis.map(k=>+k.total_actual),     backgroundColor:kpis.map(k=>(DIV_COLORS[k.division_code]?.bg||'#888')+'CC')},
-      ]},
-    options:{indexAxis:'y',...COPTS,scales:{x:{ticks:{font:{size:11},callback:v=>'Nu.'+fmt(v)}},y:{ticks:{font:{size:10}}}}}
-  });
-
-  const tb=document.getElementById('fin-div-body');
-  let tBud2=0,tPl=0,tAh=0;
-  tb.innerHTML=divs.map(d=>{
-    const dPl=plannedSess.filter(s=>s._div===d.code).reduce((a,s)=>a+ +s.expenditure,0);
-    const dAh=adhocSess.filter(s=>s._div===d.code).reduce((a,s)=>a+ +s.expenditure,0);
-    const dTot=dPl+dAh, dBal=+d.total_budget-dTot;
-    const p=d.total_budget>0?Math.round(dTot/d.total_budget*100):0;
-    const c=DIV_COLORS[d.code]||{bg:'#888'};
-    tBud2+= +d.total_budget; tPl+=dPl; tAh+=dAh;
-    return `<tr>
-      <td>${divPill(d.code)}</td>
-      <td style="text-align:center">${d.total_kpis||0}</td>
-      <td class="amount">Nu. ${fmt(d.total_budget)}</td>
-      <td class="amount">Nu. ${fmt(dPl)}</td>
-      <td class="amount" style="color:var(--orange);font-weight:${dAh>0?'600':'400'}">Nu. ${fmt(dAh)}</td>
-      <td class="amount">Nu. ${fmt(dTot)}</td>
-      <td class="amount ${dBal<0?'over':''}">Nu. ${fmt(dBal)}</td>
-      <td>${pctBar(p,c.bg)}</td>
-    </tr>`;
-  }).join('');
-  const tTot=tPl+tAh, tBal2=tBud2-tTot, tP=tBud2>0?Math.round(tTot/tBud2*100):0;
-  tb.innerHTML+=`<tr class="totals-row">
-    <td colspan="2">Total</td>
-    <td class="amount">Nu. ${fmt(tBud2)}</td>
-    <td class="amount">Nu. ${fmt(tPl)}</td>
-    <td class="amount" style="color:var(--orange)">Nu. ${fmt(tAh)}</td>
-    <td class="amount">Nu. ${fmt(tTot)}</td>
-    <td class="amount ${tBal2<0?'over':''}">Nu. ${fmt(tBal2)}</td>
-    <td><strong>${tP}%</strong></td></tr>`;
-}
-
-// ══ TAB 5: COVERAGE ══
-function renderCoverage(divs,sess,adhocSess){
-  const{from,to}=getF();
-  const totP=sess.reduce((a,s)=>a+ +s.participants_total,0);
-  const totM=sess.reduce((a,s)=>a+ +s.participants_male,0);
-  const totF=sess.reduce((a,s)=>a+ +s.participants_female,0);
-  const totAdhocP=adhocSess.reduce((a,s)=>a+ +s.participants_total,0);
-  document.getElementById('cov-kpis').innerHTML=`
-    <div class="kbox" style="--accent:var(--purple)"><div class="l">Total sessions</div><div class="v">${sess.length}</div></div>
-    <div class="kbox" style="--accent:var(--blue)"><div class="l">Total participants</div><div class="v">${fmt(totP)}</div></div>
-    <div class="kbox" style="--accent:var(--teal)"><div class="l">Male</div><div class="v">${fmt(totM)}</div><div class="sub">${totP?Math.round(totM/totP*100):0}%</div></div>
-    <div class="kbox" style="--accent:var(--coral,#D85A30)"><div class="l">Female</div><div class="v">${fmt(totF)}</div><div class="sub">${totP?Math.round(totF/totP*100):0}%</div></div>
-    <div class="kbox adhoc"><div class="l">Ad hoc participants</div><div class="v">${fmt(totAdhocP)}</div><div class="sub">${totP?Math.round(totAdhocP/totP*100):0}% of total</div></div>`;
-
-  const months=FY_MONTHS.filter(m=>m>=from&&m<=to);
-  const labels=months.map(m=>MLABELS[FY_MONTHS.indexOf(m)]);
-  let cM=0,cF=0,cT=0; const dM=[],dF=[],dT=[];
-  months.forEach(mo=>{
-    const ms=sess.filter(s=>s.session_date?.slice(0,7)===mo);
-    cM+=ms.reduce((a,s)=>a+ +s.participants_male,0);
-    cF+=ms.reduce((a,s)=>a+ +s.participants_female,0);
-    cT+=ms.reduce((a,s)=>a+ +s.participants_total,0);
-    dM.push(cM); dF.push(cF); dT.push(cT);
-  });
-
-  destroyChart('coverage');
-  charts.coverage=new Chart(document.getElementById('chart-coverage'),{type:'line',
-    data:{labels,datasets:[
-      {label:'Total', data:dT,borderColor:'#534AB7',backgroundColor:'#534AB720',fill:true,tension:.3,pointRadius:3},
-      {label:'Male',  data:dM,borderColor:'#378ADD',backgroundColor:'transparent',tension:.3,pointRadius:3},
-      {label:'Female',data:dF,borderColor:'#D85A30',backgroundColor:'transparent',tension:.3,pointRadius:3},
-    ]},options:{...COPTS}
-  });
-
-  destroyChart('sessions-trend');
-  const dcs=['ADMD','EAD','ED','PD'].filter(d=>!getF().div||d===getF().div);
-  charts['sessions-trend']=new Chart(document.getElementById('chart-sessions-trend'),{type:'line',
-    data:{labels,datasets:dcs.map(dc=>({
-      label:dc,
-      data:months.map(mo=>sess.filter(s=>s._div===dc&&s.session_date?.slice(0,7)===mo).length),
-      borderColor:DIV_COLORS[dc]?.bg||'#888',backgroundColor:'transparent',tension:.3,pointRadius:4,
-    }))},
-    options:{...COPTS,scales:{x:{ticks:{font:{size:11}}},y:{beginAtZero:true,ticks:{font:{size:11},stepSize:1}}}}
-  });
-
-  destroyChart('participants');
-  charts.participants=new Chart(document.getElementById('chart-participants'),{type:'bar',
-    data:{labels:divs.map(d=>d.code),datasets:[
-      {label:'Planned — male',  data:divs.map(d=>sess.filter(s=>s._div===d.code&&!s._isAdhoc).reduce((a,s)=>a+ +s.participants_male,0)),   backgroundColor:'#378ADDCC'},
-      {label:'Planned — female',data:divs.map(d=>sess.filter(s=>s._div===d.code&&!s._isAdhoc).reduce((a,s)=>a+ +s.participants_female,0)), backgroundColor:'#D85A30CC'},
-      {label:'Ad hoc — total',  data:divs.map(d=>sess.filter(s=>s._div===d.code&&s._isAdhoc).reduce((a,s)=>a+ +s.participants_total,0)),   backgroundColor:'#C25A0066'},
-    ]},
-    options:{...COPTS}
-  });
-
-  const tb=document.getElementById('cov-body');
-  let tS=0,tP=0,tM=0,tF=0,tAP=0;
-  tb.innerHTML=divs.map(d=>{
-    const ds=sess.filter(s=>s._div===d.code);
-    const sP=ds.reduce((a,s)=>a+ +s.participants_total,0);
-    const sM=ds.reduce((a,s)=>a+ +s.participants_male,0);
-    const sF=ds.reduce((a,s)=>a+ +s.participants_female,0);
-    const sAP=ds.filter(s=>s._isAdhoc).reduce((a,s)=>a+ +s.participants_total,0);
-    const fp=sP>0?Math.round(sF/sP*100):0;
-    tS+=ds.length; tP+=sP; tM+=sM; tF+=sF; tAP+=sAP;
-    return `<tr><td>${divPill(d.code)}</td>
-      <td>${ds.length}</td><td>${fmt(sP)}</td>
-      <td>${fmt(sM)}</td><td>${fmt(sF)}</td><td>${fp}%</td>
-      <td style="color:var(--orange);font-weight:${sAP>0?'600':'400'}">${sAP>0?fmt(sAP):'—'}</td></tr>`;
-  }).join('')+`<tr class="totals-row">
-    <td>Total</td><td>${tS}</td><td>${fmt(tP)}</td>
-    <td>${fmt(tM)}</td><td>${fmt(tF)}</td>
-    <td>${tP>0?Math.round(tF/tP*100):0}%</td>
-    <td style="color:var(--orange)">${fmt(tAP)}</td></tr>`;
-}
-
-// ══ TAB 6: SESSION LOG ══
-function renderSessionLog(sess){
-  const tb=document.getElementById('sess-body');
-  if(!sess || !sess.length){tb.innerHTML=`<tr><td colspan="16" class="empty">No sessions.</td></tr>`;return;}
-  tb.innerHTML=sess.map((s,i)=>`<tr class="${s._isAdhoc?'adhoc-row':''}">
-    <td>${i+1}</td>
-    <td>${s._isAdhoc?`<span class="badge adhoc">⚡ Ad hoc</span>`:'<span style="font-size:11px;color:var(--text-muted)">Planned</span>'}</td>
-    <td>${divPill(s._div)}</td>
-    <td style="font-size:11px;color:var(--text-muted)">${s._kpiName || '—'}</td>
-    <td>${s._actName || '—'}</td>
-    <td style="white-space:nowrap">${fmtDate(s.session_date)}</td>
-    <td>${s.venue||'—'}</td><td>${s.place_address||'—'}</td>
-    <td>${s.target_audience||'—'}</td>
-    <td><strong>${fmt(s.participants_total)}</strong></td>
-    <td>${fmt(s.participants_male)}</td><td>${fmt(s.participants_female)}</td>
-    <td class="amount">Nu. ${fmt(s.expenditure)}</td>
-    <td>${s.duration||'—'}</td>
-    <td style="font-size:12px;max-width:130px;white-space:normal">${s.remarks||'—'}</td>
-    <td>${s.entered_by||'—'}</td>
-  </tr>`).join('');
-}
-
-// CSV EXPORT
-document.getElementById('btn-csv').addEventListener('click',()=>{
-  const{div,from,to}=getF();
-  const sess=fSess(allSessions), acts=fActs(), adhoc=fAdhoc(), kpis=fKpis(), divs=fDivs();
-  const plannedSess=sess.filter(s=>!s._isAdhoc), adhocSess=sess.filter(s=>s._isAdhoc);
-  const rows=[
-    [`DoPE Performance Dashboard — FY 2026-2027`],
-    [`Division: ${div||'All'}  |  Period: ${from} to ${to}`],[],
-    ['=== APT — KPI SUMMARY ==='],
-    ['Division','KPI','Target','Budget (Nu.)','Actual (Nu.)','Balance (Nu.)','Planned acts.','Ad hoc','Participants','Status'],
-    ...kpis.map(k=>[k.division_code,k.kpi_name,k.target,k.budget_allocated,k.total_actual,+k.budget_allocated - +k.total_actual,k.total_activities,k.total_adhoc||0,k.total_participants,k.status]),
-    [],['=== AD HOC ACTIVITIES ==='],
-    ['Division','KPI','Activity','Reason','Status','Sessions','Participants','Realloc. from','Realloc. amount (Nu.)','Actual (Nu.)'],
-    ...adhoc.map(a=>[a.division_code,a.kpi_name||'Standalone',a.name,a.adhoc_reason||'',a.status,a._sessionsCount,a._participantsCount,a.realloc_from_name||'',getRealloc(a),a._actualExpenditure]),
-    [],['=== PLANNED ACTIVITY DETAIL ==='],
-    ['Division','KPI','Activity','Sessions','Status','Budget (Nu.)','Actual (Nu.)'],
-    ...acts.map(a=>[a.division_code,a.kpi_name||'',a.name,getSessions(a),a.status,a.budget_allocated,getActual(a)]),
-    [],['=== SESSION LOG ==='],
-    ['Type','Division','KPI','Activity','Date','Venue','Place','Audience','Total','Male','Female','Expenditure (Nu.)','Duration','Remarks','Entered by'],
-    ...sess.map(s=>[s._isAdhoc?'Ad hoc':'Planned',s._div,s._kpiName,s._actName,s.session_date,s.venue||'',s.place_address||'',s.target_audience||'',s.participants_total,s.participants_male,s.participants_female,s.expenditure,s.duration||'',s.remarks||'',s.entered_by]),
-    [],['=== REVISION HISTORY ==='],
-    ['Division','KPI','Field','Original','Revised to','By','Date','Reason'],
-    ...allRevisions.filter(r=>!div||r.kpis?.divisions?.code===div).map(r=>[r.kpis?.divisions?.code||'',r.kpis?.kpi_name||'',r.field_changed,r.old_value||'',r.new_value||'',r.revised_by,r.revised_at?.slice(0,10)||'',r.revision_reason||'']),
-  ];
-  const csv=rows.map(r=>r.map(v=>`"${String(v??'').replace(/"/g,'""')}"`).join(',')).join('\n');
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
-  a.download=`DoPE_Report_${div||'All'}_${from}_${to}.csv`;
-  a.click();
-});
-
-document.getElementById('btn-print').addEventListener('click',()=>window.print());
-loadData();
+load();
+loadRecentLog();
 </script>
 </body>
 </html>
