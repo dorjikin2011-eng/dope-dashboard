@@ -32,6 +32,7 @@
   nav a{color:rgba(255,255,255,.85);text-decoration:none;padding:6px 14px;
     border-radius:6px;font-size:13px;transition:background .15s;}
   nav a:hover,nav a.active{background:rgba(255,255,255,.18);color:#fff;}
+  #last-viewed{font-size:11px; opacity:0.8; margin-right:10px;}
 
   .page{max-width:1100px;margin:0 auto;padding:28px 20px 60px;}
   h2{font-size:16px;font-weight:600;color:var(--text);margin-bottom:14px;}
@@ -143,6 +144,7 @@
     ACC · DoPE
     <span>Performance Dashboard FY 2026–2027</span>
   </div>
+  <div id="last-viewed"></div>
   <div class="nav-links">
     <a href="index.html" class="active">Home</a>
     <a href="reports.html">Reports</a>
@@ -288,7 +290,35 @@ function actionIcon(field){
   return '✎';
 }
 
+// Global "Last Viewed" tracking
+async function trackVisit() {
+  try {
+    await fetch(SUPA_URL + '/rest/v1/dashboard_visits?id=eq.1', {
+      method: 'PATCH',
+      headers: {
+        apikey: SUPA_KEY,
+        Authorization: 'Bearer ' + SUPA_KEY,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify({ last_viewed_at: new Date().toISOString() })
+    });
+  } catch(e) { console.error("Visit tracking failed", e); }
+}
+
+async function loadStatus() {
+  try {
+    const data = await query('/rest/v1/dashboard_visits?id=eq.1&select=last_viewed_at');
+    if (data.length > 0) {
+      const time = new Date(data[0].last_viewed_at);
+      document.getElementById('last-viewed').textContent = 'Last viewed: ' + time.toLocaleString();
+    }
+  } catch(e) { console.error("Status load failed", e); }
+}
+
 async function load(){
+  trackVisit();
+  loadStatus();
   try {
     const [divRows,kpiRows]=await Promise.all([
       query('/rest/v1/v_division_summary?select=*'),
