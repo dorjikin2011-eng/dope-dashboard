@@ -5,21 +5,17 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Quarterly Planning — DoPE Dashboard</title>
 <style>
-  :root { 
-    --purple:#534AB7; --teal:#1D9E75; --blue:#378ADD; --bg:#F6F5F0; 
-    --card:#FFFFFF; --border:rgba(0,0,0,0.12); --radius:10px; 
-    --text:#2C2C2A; --text-muted:#5F5E5A; --gray-light:#F1EFE8;
-  }
+  :root { --purple:#534AB7; --bg:#F6F5F0; --card:#FFFFFF; --border:rgba(0,0,0,0.12); --text:#2C2C2A; --text-muted:#5F5E5A; --gray-light:#F1EFE8; --radius:10px; }
   body{font-family:system-ui,sans-serif;background:var(--bg);color:var(--text);font-size:15px;}
   nav{background:var(--purple);color:#fff;padding:0 24px;height:52px; display:flex;align-items:center;justify-content:space-between;}
   .nav-links a{color:rgba(255,255,255,.85);text-decoration:none;padding:6px 14px; border-radius:6px;font-size:13px;}
   .nav-links a.active{background:rgba(255,255,255,.18);color:#fff;}
-  .page{max-width:1100px;margin:0 auto;padding:28px 20px;}
-  .table-wrap{background:var(--card);border:0.5px solid var(--border);border-radius:var(--radius);overflow:hidden;}
-  table{width:100%;border-collapse:collapse;font-size:13px;}
-  th{padding:12px;background:var(--gray-light);text-align:left;font-weight:600;color:var(--text-muted);}
-  td{padding:12px;border-top:0.5px solid var(--border);}
-  .status-badge{padding:4px 8px;border-radius:4px;border:1px solid var(--border);font-size:12px;}
+  .page{max-width:900px;margin:0 auto;padding:28px 20px;}
+  .card{background:var(--card);border:0.5px solid var(--border);border-radius:var(--radius);padding:24px;}
+  select, input{padding:8px;border:1px solid var(--border);border-radius:6px;font-size:14px;}
+  .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:20px;}
+  .q-box{text-align:center;}
+  label{display:block;font-size:12px;font-weight:600;margin-bottom:6px;color:var(--text-muted);}
 </style>
 </head>
 <body>
@@ -33,28 +29,40 @@
 </nav>
 
 <div class="page">
-  <div class="section">
-    <h2>Quarterly KPI Targets</h2>
-    <div class="filter-bar" style="background:#fff; padding:12px; border:0.5px solid #ccc; border-radius:10px 10px 0 0; display:flex; gap:10px; margin-bottom:0;">
-      <select id="f-div" onchange="loadPlans()">
-        <option value="ADMD">ADMD</option><option value="EAD">EAD</option>
-        <option value="ED">ED</option><option value="PD">PD</option>
-      </select>
-      <select id="f-qtr" onchange="loadPlans()">
-        <option value="Q1">Q1</option><option value="Q2">Q2</option>
-        <option value="Q3">Q3</option><option value="Q4">Q4</option>
-      </select>
+  <div class="card">
+    <h2 style="margin-bottom:20px">Prepare Quarterly Targets</h2>
+    
+    <div style="display:flex; gap:16px; margin-bottom:24px; flex-wrap:wrap;">
+      <div>
+        <label>Division</label>
+        <select id="f-div" onchange="loadKPIs()">
+          <option value="">Select...</option>
+          <option value="ADMD">ADMD</option><option value="EAD">EAD</option>
+          <option value="ED">ED</option><option value="PD">PD</option>
+        </select>
+      </div>
+      <div>
+        <label>Year</label>
+        <select id="f-year" onchange="loadKPIs()">
+          <option value="2026">2026</option><option value="2027">2027</option>
+        </select>
+      </div>
+      <div style="flex-grow:1">
+        <label>Select KPI</label>
+        <select id="f-kpi" onchange="loadQuarterlyData()" style="width:100%">
+          <option value="">Select a KPI first...</option>
+        </select>
+      </div>
     </div>
 
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr><th>KPI Name</th><th>Type</th><th>Target / Progress</th><th>Status</th></tr>
-        </thead>
-        <tbody id="plan-body">
-          <tr><td colspan="4" style="text-align:center; padding:20px;">Loading plans…</td></tr>
-        </tbody>
-      </table>
+    <div id="plan-editor" style="display:none;">
+      <h3 style="font-size:14px; margin-bottom:10px;">Targets for <span id="selected-kpi-name"></span></h3>
+      <div class="grid">
+        <div class="q-box"><label>Q1</label><input type="number" id="q1" onchange="saveTarget('Q1', this.value)"></div>
+        <div class="q-box"><label>Q2</label><input type="number" id="q2" onchange="saveTarget('Q2', this.value)"></div>
+        <div class="q-box"><label>Q3</label><input type="number" id="q3" onchange="saveTarget('Q3', this.value)"></div>
+        <div class="q-box"><label>Q4</label><input type="number" id="q4" onchange="saveTarget('Q4', this.value)"></div>
+      </div>
     </div>
   </div>
 </div>
@@ -63,60 +71,71 @@
 const SUPA_URL = 'https://fiozcsxlnpvphrxwvzzy.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZpb3pjc3hsbnB2cGhyeHd2enp5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwNzkxNTYsImV4cCI6MjA5NjY1NTE1Nn0.1XZn61C23mE5LkltAC1VU57-iWySlJsy1_9-ZRAW1I8';
 
-async function loadPlans() {
+async function loadKPIs() {
   const div = document.getElementById('f-div').value;
-  const qtr = document.getElementById('f-qtr').value;
-  const tbody = document.getElementById('plan-body');
+  const year = document.getElementById('f-year').value;
+  const select = document.getElementById('f-kpi');
+  if(!div) return;
   
-  try {
-    const res = await fetch(`${SUPA_URL}/rest/v1/quarterly_plans?division_code=eq.${div}&quarter=eq.${qtr}`, {
-      headers: { apikey: SUPA_KEY, Authorization: 'Bearer ' + SUPA_KEY }
-    });
-    const data = await res.json();
-    
-    if (data.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="4" style="text-align:center">No plans found.</td></tr>`;
-      return;
-    }
+  select.innerHTML = '<option value="">Loading...</option>';
 
-    tbody.innerHTML = data.map(p => `
-      <tr>
-        <td>${p.kpi_name}</td>
-        <td>${p.kpi_type}</td>
-        <td>
-          ${p.kpi_type === 'quantitative' 
-            ? `<input type="number" value="${p.target_value||0}" onchange="updatePlan('${p.id}', this.value)" style="padding:4px;"> ${p.unit||''}`
-            : `<em>See milestone list</em>`}
-        </td>
-        <td>
-            <select class="status-badge" onchange="updateStatus('${p.id}', this.value)">
-                <option value="pending" ${p.status === 'pending' ? 'selected' : ''}>Pending</option>
-                <option value="in_progress" ${p.status === 'in_progress' ? 'selected' : ''}>In Progress</option>
-                <option value="completed" ${p.status === 'completed' ? 'selected' : ''}>Completed</option>
-            </select>
-        </td>
-      </tr>
-    `).join('');
-  } catch(e) { console.error(e); }
+  // Fetch unique KPI names for this division
+  const res = await fetch(`${SUPA_URL}/rest/v1/quarterly_plans?division_code=eq.${div}&select=kpi_name&distinct=true`, {
+    headers: { apikey: SUPA_KEY, Authorization: 'Bearer ' + SUPA_KEY }
+  });
+  const data = await res.json();
+  
+  select.innerHTML = '<option value="">Select a KPI...</option>' + 
+    data.map(k => `<option value="${k.kpi_name}">${k.kpi_name}</option>`).join('');
 }
 
-async function updatePlan(id, val) {
-  await fetch(`${SUPA_URL}/rest/v1/quarterly_plans?id=eq.${id}`, {
-    method: 'PATCH',
-    headers: { apikey: SUPA_KEY, 'Content-Type': 'application/json', Authorization: 'Bearer ' + SUPA_KEY },
-    body: JSON.stringify({ target_value: val })
+async function loadQuarterlyData() {
+  const kpiName = document.getElementById('f-kpi').value;
+  const div = document.getElementById('f-div').value;
+  const year = document.getElementById('f-year').value;
+
+  if(!kpiName) return;
+
+  document.getElementById('plan-editor').style.display = 'block';
+  document.getElementById('selected-kpi-name').innerText = kpiName;
+  
+  const res = await fetch(`${SUPA_URL}/rest/v1/quarterly_plans?kpi_name=eq.${encodeURIComponent(kpiName)}&division_code=eq.${div}&year=eq.${year}`, {
+    headers: { apikey: SUPA_KEY, Authorization: 'Bearer ' + SUPA_KEY }
+  });
+  const data = await res.json();
+
+  // Reset inputs
+  ['q1','q2','q3','q4'].forEach(q => document.getElementById(q).value = '');
+
+  // Fill inputs
+  data.forEach(d => {
+    const el = document.getElementById(d.quarter.toLowerCase());
+    if(el) el.value = d.target_value;
   });
 }
 
-async function updateStatus(id, status) {
-  await fetch(`${SUPA_URL}/rest/v1/quarterly_plans?id=eq.${id}`, {
-    method: 'PATCH',
-    headers: { apikey: SUPA_KEY, 'Content-Type': 'application/json', Authorization: 'Bearer ' + SUPA_KEY },
-    body: JSON.stringify({ status: status })
+async function saveTarget(qtr, val) {
+  const kpiName = document.getElementById('f-kpi').value;
+  const div = document.getElementById('f-div').value;
+  const year = document.getElementById('f-year').value;
+
+  // We use POST with ignore duplicate preference to handle upsert
+  await fetch(`${SUPA_URL}/rest/v1/quarterly_plans`, {
+    method: 'POST',
+    headers: { 
+      apikey: SUPA_KEY, 'Content-Type': 'application/json', 
+      Authorization: 'Bearer ' + SUPA_KEY,
+      'Prefer': 'resolution=merge-duplicates' 
+    },
+    body: JSON.stringify({ 
+        kpi_name: kpiName, 
+        quarter: qtr, 
+        target_value: val, 
+        division_code: div,
+        year: parseInt(year)
+    })
   });
 }
-
-loadPlans();
 </script>
 </body>
 </html>
