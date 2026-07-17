@@ -3,43 +3,201 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Quarterly Planning — DoPE Dashboard</title>
-<!-- Reusing your existing styles from index.html for consistency -->
-<link rel="stylesheet" href="style.css"> <!-- If you have a separate CSS file, or copy the <style> from index.html here -->
+<title>DoPE Dashboard — FY 2026-2027</title>
 <style>
-    /* Copy the :root and general styles from index.html here to ensure the look matches perfectly */
-    /* Add specific styles for the planning board */
-    .planning-grid { display: grid; grid-template-columns: 1fr; gap: 20px; }
-    .status-badge { padding: 4px 8px; border-radius: 4px; border: 1px solid var(--border); font-size: 12px; }
+  :root {
+    --purple:#534AB7; --purple-light:#EEEDFE; --purple-dark:#3C3489;
+    --teal:#1D9E75;   --teal-light:#E1F5EE;
+    --blue:#378ADD;   --blue-light:#E6F1FB;
+    --green:#639922;  --green-light:#EAF3DE;
+    --amber:#BA7517;  --amber-light:#FAEEDA;
+    --red:#A32D2D;    --red-light:#FCEBEB;
+    --coral:#993C1D;  --coral-light:#FAECE7;
+    --gray:#5F5E5A;   --gray-light:#F1EFE8;
+    --text:#2C2C2A;   --text-muted:#5F5E5A;
+    --border:rgba(0,0,0,0.12);
+    --bg:#F6F5F0;     --card:#FFFFFF;
+    --radius:10px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:system-ui,sans-serif;background:var(--bg);color:var(--text);font-size:15px;}
+
+  /* NAV */
+  nav{background:var(--purple);color:#fff;padding:0 24px;height:52px;
+    display:flex;align-items:center;justify-content:space-between;
+    position:sticky;top:0;z-index:100;}
+  nav .brand{font-weight:600;font-size:15px;letter-spacing:.01em;}
+  nav .brand span{opacity:.7;font-weight:400;margin-left:8px;font-size:13px;}
+  nav .nav-links{display:flex;gap:6px;}
+  nav a{color:rgba(255,255,255,.85);text-decoration:none;padding:6px 14px;
+    border-radius:6px;font-size:13px;transition:background .15s;}
+  nav a:hover,nav a.active{background:rgba(255,255,255,.18);color:#fff;}
+  #last-viewed{font-size:11px; opacity:0.8; margin-right:10px;}
+
+  .page{max-width:1100px;margin:0 auto;padding:28px 20px 60px;}
+  h2{font-size:16px;font-weight:600;color:var(--text);margin-bottom:14px;}
+  .section{margin-bottom:32px;}
+
+  /* METRIC CARDS */
+  .metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;}
+  .metric-card{background:var(--card);border:0.5px solid var(--border);
+    border-radius:var(--radius);padding:16px 18px;
+    border-left:4px solid var(--accent,var(--teal));}
+  .metric-card .label{font-size:12px;color:var(--text-muted);margin-bottom:6px;}
+  .metric-card .value{font-size:28px;font-weight:600;color:var(--accent,var(--teal));}
+  .metric-card .sub{font-size:12px;color:var(--text-muted);margin-top:2px;}
+
+  /* BUDGET BAR */
+  .budget-card{background:var(--card);border:0.5px solid var(--border);
+    border-radius:var(--radius);padding:18px 22px;}
+  .budget-header{display:flex;justify-content:space-between;margin-bottom:10px;font-size:13px;}
+  .budget-header .pct{font-weight:600;color:var(--teal);}
+  .bar-track{background:var(--gray-light);border-radius:6px;height:10px;overflow:hidden;}
+  .bar-fill{height:100%;border-radius:6px;background:var(--teal);transition:width .6s ease;}
+  .budget-footer{display:flex;justify-content:space-between;margin-top:8px;font-size:12px;color:var(--text-muted);}
+
+  /* CONTROLS & FILTER HEADER */
+  .filter-bar {
+    display:flex;
+    gap:10px;
+    background:var(--card);
+    padding:12px 16px;
+    border:0.5px solid var(--border);
+    border-radius:var(--radius) var(--radius) 0 0;
+    align-items:center;
+    flex-wrap:wrap;
+  }
+  .filter-bar label {
+    font-size:12px;
+    font-weight:600;
+    color:var(--text-muted);
+    margin-right:4px;
+  }
+  .filter-bar select {
+    padding:6px 10px;
+    font-size:13px;
+    border-radius:6px;
+    border:1px solid var(--border);
+    background:var(--bg);
+    color:var(--text);
+    outline:none;
+    cursor:pointer;
+  }
+  .filter-bar select:focus {
+    border-color:var(--purple);
+  }
+
+  /* DIVISION GRID */
+  .div-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;}
+  .div-card{background:var(--card);border:0.5px solid var(--border);
+    border-radius:var(--radius);padding:18px;cursor:pointer;
+    transition:box-shadow .15s,transform .1s;
+    border-top:3px solid var(--accent,var(--blue));
+    text-decoration:none;color:inherit;display:block;}
+  .div-card:hover{box-shadow:0 4px 16px rgba(0,0,0,.09);transform:translateY(-2px);}
+  .div-card .div-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;}
+  .div-card .div-code{font-size:18px;font-weight:700;color:var(--accent,var(--blue));}
+  .div-card .div-name{font-size:11px;color:var(--text-muted);margin-top:2px;line-height:1.4;}
+  .div-card .budget-pct{font-size:12px;font-weight:600;padding:2px 8px;
+    background:var(--accent-light,var(--blue-light));
+    color:var(--accent,var(--blue));border-radius:20px;}
+  .status-row{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0;}
+   
+  .badge{font-size:11px;padding:2px 8px;border-radius:20px;font-weight:500;display:inline-block;text-transform:capitalize;}
+  .badge.completed {background:var(--green-light);color:var(--green);}
+  .badge.ongoing   {background:var(--amber-light); color:var(--amber);}
+  .badge.delayed   {background:var(--red-light);   color:var(--red);}
+  .badge.notstarted, .badge.not_started{background:var(--gray-light);  color:var(--gray);}
+   
+  .div-bar-track{background:var(--gray-light);border-radius:4px;height:5px;margin-top:10px;}
+  .div-bar-fill{height:100%;border-radius:4px;background:var(--accent,var(--blue));}
+
+  /* APT TABLE */
+  .table-wrap{background:var(--card);border:0.5px solid var(--border);border-radius:0 0 var(--radius) var(--radius);overflow-x:auto;border-top:0;}
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  thead tr{background:var(--gray-light);}
+  th{padding:9px 14px;text-align:left;font-weight:600;font-size:12px;color:var(--text-muted);white-space:nowrap;}
+  td{padding:9px 14px;border-top:0.5px solid var(--border);vertical-align:middle;}
+  .amount{font-variant-numeric:tabular-nums;white-space:nowrap;}
+  .over{color:var(--red);font-weight:600;}
+  .totals-row td{font-weight:700;background:var(--gray-light);border-top:2px solid var(--border);}
+  .div-pill{display:inline-block;font-size:11px;padding:2px 10px;border-radius:20px;font-weight:600;}
+  .revised-badge{display:inline-block;font-size:10px;padding:2px 7px;border-radius:20px;
+    background:var(--purple-light);color:var(--purple);font-weight:600;margin-left:5px;vertical-align:middle;}
+
+  /* LOADING / ERROR */
+  .loading{text-align:center;padding:40px;color:var(--text-muted);font-size:14px;}
+  .err{background:var(--red-light);color:var(--red);border-radius:8px;padding:12px 16px;font-size:13px;}
+
+  @media(max-width:600px){
+    .metrics{grid-template-columns:1fr 1fr;}
+    .div-grid{grid-template-columns:1fr;}
+    nav .brand span{display:none;}
+    .filter-bar{flex-direction:column;align-items:stretch;gap:8px;}
+  }
 </style>
 </head>
 <body>
 
 <nav>
-  <div class="brand">ACC · DoPE <span>Quarterly Planning</span></div>
+  <div class="brand">
+    ACC · DoPE
+    <span>Performance Dashboard FY 2026–2027</span>
+  </div>
+  <div id="last-viewed"></div>
   <div class="nav-links">
-    <a href="index.html">Home</a>
-    <a href="planning.html" class="active">Planning</a>
+    <a href="index.html" class="active">Home</a>
     <a href="reports.html">Reports</a>
+    <a href="auditlog.html">Activity Log</a>
   </div>
 </nav>
 
 <div class="page">
+
   <div class="section">
-    <h2>Quarterly KPI Targets</h2>
+    <h2>Department overview</h2>
+    <div class="metrics" id="metrics">
+      <div class="loading">Loading…</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="budget-card">
+      <div class="budget-header">
+        <span>Department budget utilisation</span>
+        <span class="pct" id="budget-pct">—</span>
+      </div>
+      <div class="bar-track"><div class="bar-fill" id="budget-bar" style="width:0%"></div></div>
+      <div class="budget-footer">
+        <span id="budget-actual">Actual: Nu. —</span>
+        <span id="budget-balance">Balance: Nu. —</span>
+        <span id="budget-total">Allocated: Nu. —</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Annual Performance Targets (APT) — FY 2026–2027</h2>
+     
     <div class="filter-bar">
       <div>
-        <label>Division:</label>
-        <select id="f-div" onchange="loadPlans()">
-          <option value="ADMD">ADMD</option><option value="EAD">EAD</option>
-          <option value="ED">ED</option><option value="PD">PD</option>
+        <label for="filter-div">Division:</label>
+        <select id="filter-div" onchange="filterAPT()">
+          <option value="ALL">All Divisions</option>
+          <option value="ADMD">ADMD</option>
+          <option value="EAD">EAD</option>
+          <option value="ED">ED</option>
+          <option value="PD">PD</option>
         </select>
       </div>
       <div>
-        <label>Quarter:</label>
-        <select id="f-qtr" onchange="loadPlans()">
-          <option value="Q1">Q1</option><option value="Q2">Q2</option>
-          <option value="Q3">Q3</option><option value="Q4">Q4</option>
+        <label for="filter-status">Status:</label>
+        <select id="filter-status" onchange="filterAPT()">
+          <option value="ALL">All Statuses</option>
+          <option value="completed">Completed</option>
+          <option value="ongoing">Ongoing</option>
+          <option value="delayed">Delayed</option>
+          <option value="notstarted">Not Started</option>
         </select>
       </div>
     </div>
@@ -48,75 +206,348 @@
       <table>
         <thead>
           <tr>
-            <th>KPI Name</th><th>Type</th><th>Target / Milestone</th><th>Status</th>
+            <th>Division</th><th>KPI</th><th>Target</th>
+            <th>Budget (Nu. M)</th><th>Actual (Nu. M)</th><th>Balance (Nu. M)</th>
+            <th>Planned acts.</th><th>Ad hoc</th><th>Status</th>
           </tr>
         </thead>
-        <tbody id="plan-body">
-          <tr><td colspan="4" class="loading">Loading plans…</td></tr>
+        <tbody id="apt-body">
+          <tr><td colspan="9" class="loading">Loading…</td></tr>
         </tbody>
       </table>
     </div>
   </div>
+
+  <div class="section">
+    <div style="display:flex;align-items:center;gap:10px;background:#FAEEDA;
+      border:1px solid #BA7517;border-radius:8px;padding:11px 16px;">
+      <span style="font-size:18px">⚠</span>
+      <span style="font-size:13px;color:#7A4D0F">
+        <strong>Reminder:</strong> Please enter all budget and expenditure figures in
+        <strong>Nu. Million</strong> — e.g. Nu. 1,500,000 = Nu. 1.500.
+      </span>
+    </div>
+  </div>
+
+  <div class="section">
+
+   <!-- Insert the navigation tip here -->
+    <div style="background:var(--blue-light); border:1px solid var(--blue); padding:12px; border-radius:var(--radius); margin-bottom:20px; font-size:14px; color:var(--text);">
+      <strong>Navigation Tip:</strong> Click on your respective division below to add or manage <strong>KPIs, Activities, and Sessions</strong>.
+    </div>
+
+    <h2>Divisions</h2>
+    <div class="div-grid" id="div-grid">
+      <div class="loading">Loading…</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <h2 style="margin:0">Recent activities</h2>
+      <a href="auditlog.html" style="font-size:13px;color:var(--purple);
+        text-decoration:none;font-weight:600">View full log →</a>
+    </div>
+    <div id="recent-log"><div class="loading">Loading…</div></div>
+  </div>
+
 </div>
 
 <script>
 const SUPA_URL = 'https://fiozcsxlnpvphrxwvzzy.supabase.co';
-const SUPA_KEY = 'YOUR_SUPABASE_KEY'; // Use the same key from index.html
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZpb3pjc3hsbnB2cGhyeHd2enp5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwNzkxNTYsImV4cCI6MjA5NjY1NTE1Nn0.1XZn61C23mE5LkltAC1VU57-iWySlJsy1_9-ZRAW1I8';
 
-async function loadPlans() {
-  const div = document.getElementById('f-div').value;
-  const qtr = document.getElementById('f-qtr').value;
-  const tbody = document.getElementById('plan-body');
-  
+const DIVISION_COLORS = {
+  ADMD:{accent:'#378ADD',light:'#E6F1FB'},
+  EAD: {accent:'#1D9E75',light:'#E1F5EE'},
+  ED:  {accent:'#D85A30',light:'#FAECE7'},
+  PD:  {accent:'#534AB7',light:'#EEEDFE'},
+};
+
+// Internal caching variable for filtering datasets dynamically
+let globalKpiRows = [];
+
+async function query(path){
+  const r=await fetch(SUPA_URL+path,{
+    headers:{apikey:SUPA_KEY,Authorization:'Bearer '+SUPA_KEY}
+  });
+  if(!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+
+function fmt(n){ return Number(n||0).toFixed(3); }
+
+function timeAgo(ts){
+  const diff=Math.floor((Date.now()-new Date(ts))/1000);
+  if(diff<60)    return 'just now';
+  if(diff<3600)  return Math.floor(diff/60)+'m ago';
+  if(diff<86400) return Math.floor(diff/3600)+'h ago';
+  return Math.floor(diff/86400)+'d ago';
+}
+
+function actionIcon(field){
+  if(!field) return '✎';
+  const f=field.toLowerCase();
+  if(f.includes('created'))  return '＋';
+  if(f.includes('session'))  return '📋';
+  if(f.includes('status'))   return '🔄';
+  if(f.includes('budget')||f.includes('expenditure')) return '💰';
+  if(f.includes('ad hoc'))   return '⚡';
+  return '✎';
+}
+
+// Global "Last Viewed" tracking
+async function trackVisit() {
   try {
-    const response = await fetch(`${SUPA_URL}/rest/v1/quarterly_plans?division_code=eq.${div}&quarter=eq.${qtr}`, {
-      headers: { apikey: SUPA_KEY, Authorization: 'Bearer ' + SUPA_KEY }
+    await fetch(SUPA_URL + '/rest/v1/dashboard_visits?id=eq.1', {
+      method: 'PATCH',
+      headers: {
+        apikey: SUPA_KEY,
+        Authorization: 'Bearer ' + SUPA_KEY,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify({ last_viewed_at: new Date().toISOString() })
     });
-    const data = await response.json();
-    
-    if (data.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="4" style="text-align:center">No plans found for this quarter.</td></tr>`;
+  } catch(e) { console.error("Visit tracking failed", e); }
+}
+
+async function loadStatus() {
+  try {
+    const data = await query('/rest/v1/dashboard_visits?id=eq.1&select=last_viewed_at');
+    if (data.length > 0) {
+      const time = new Date(data[0].last_viewed_at);
+      document.getElementById('last-viewed').textContent = 'Last viewed: ' + time.toLocaleString();
+    }
+  } catch(e) { console.error("Status load failed", e); }
+}
+
+async function load(){
+  trackVisit();
+  loadStatus();
+  try {
+    const [divRows,kpiRows]=await Promise.all([
+      query('/rest/v1/v_division_summary?select=*'),
+      query('/rest/v1/v_kpi_summary?select=*&order=division_code.asc,created_at.asc'),
+    ]);
+
+    globalKpiRows = kpiRows;
+
+    let totKpis=0,totAct=0,totAdhoc=0,totComp=0,totOngoing=0,totDelayed=0,totNotStart=0;
+    let totBudget=0,totActual=0;
+    divRows.forEach(r=>{
+      totKpis     += +r.total_kpis;
+      totAct      += +r.total_activities;
+      totAdhoc    += +r.total_adhoc;
+      totComp     += +r.completed;
+      totOngoing  += +r.ongoing;
+      totDelayed  += +r.delayed;
+      totNotStart += +r.not_started;
+      totBudget   += +r.total_budget;
+      totActual   += +r.total_actual;
+    });
+
+    const pct=totBudget>0?Math.round(totActual/totBudget*100):0;
+    const bal=totBudget-totActual;
+
+    document.getElementById('metrics').innerHTML=`
+      <div class="metric-card" style="--accent:var(--purple)">
+        <div class="label">Total KPIs</div><div class="value">${totKpis}</div>
+      </div>
+      <div class="metric-card" style="--accent:var(--teal)">
+        <div class="label">Planned activities</div><div class="value">${totAct}</div>
+      </div>
+      <div class="metric-card" style="--accent:var(--green)">
+        <div class="label">Completed</div><div class="value">${totComp}</div>
+        <div class="sub">${totAct?Math.round(totComp/totAct*100):0}% of planned</div>
+      </div>
+      <div class="metric-card" style="--accent:var(--amber)">
+        <div class="label">Ongoing</div><div class="value">${totOngoing}</div>
+      </div>
+      <div class="metric-card" style="--accent:var(--red)">
+        <div class="label">Delayed</div><div class="value">${totDelayed}</div>
+      </div>
+      <div class="metric-card" style="--accent:#C25A00;border-left-color:#C25A00">
+        <div class="label">Ad hoc activities</div>
+        <div class="value" style="color:#C25A00">${totAdhoc}</div>
+        <div class="sub">Unplanned / assigned</div>
+      </div>
+      <div class="metric-card" style="--accent:var(--blue)">
+        <div class="label">Total budget (Nu. M)</div>
+        <div class="value" style="font-size:18px">Nu. ${fmt(totBudget)}</div>
+      </div>
+      <div class="metric-card" style="--accent:var(--teal)">
+        <div class="label">Actual expenditure (Nu. M)</div>
+        <div class="value" style="font-size:18px">Nu. ${fmt(totActual)}</div>
+        <div class="sub">${pct}% utilised</div>
+      </div>
+      <div class="metric-card" style="--accent:${bal<0?'var(--red)':'var(--gray)'}">
+        <div class="label">Balance (Nu. M)</div>
+        <div class="value" style="font-size:18px;color:${bal<0?'var(--red)':'inherit'}">Nu. ${fmt(bal)}</div>
+      </div>`;
+
+    document.getElementById('budget-pct').textContent    = pct+'%';
+    document.getElementById('budget-bar').style.width    = Math.min(pct,100)+'%';
+    document.getElementById('budget-bar').style.background = pct>100?'var(--red)':'var(--teal)';
+    document.getElementById('budget-actual').textContent  = 'Actual: Nu. '+fmt(totActual)+' M';
+    document.getElementById('budget-balance').textContent = 'Balance: Nu. '+fmt(bal)+' M';
+    document.getElementById('budget-total').textContent   = 'Allocated: Nu. '+fmt(totBudget)+' M';
+
+    renderAPT(globalKpiRows);
+
+    document.getElementById('div-grid').innerHTML=divRows.map(r=>{
+      const c=DIVISION_COLORS[r.code]||{accent:'#378ADD',light:'#E6F1FB'};
+      const dp=r.total_budget>0?Math.round(r.total_actual/r.total_budget*100):0;
+      return `
+        <a class="div-card" href="division.html?div=${r.code}"
+           style="--accent:${c.accent};--accent-light:${c.light}">
+          <div class="div-header">
+            <div>
+              <div class="div-code">${r.code}</div>
+              <div class="div-name">${r.name}</div>
+            </div>
+            <div class="budget-pct">${dp}% budget</div>
+          </div>
+          <div class="status-row">
+            <span style="font-size:11px;color:var(--text-muted)">${r.total_kpis} KPI${r.total_kpis!=1?'s':''}</span>
+            <span class="badge completed">${r.completed} Done</span>
+            <span class="badge ongoing">${r.ongoing} Ongoing</span>
+            ${+r.delayed>0?`<span class="badge delayed">${r.delayed} Delayed</span>`:''}
+            ${+r.total_adhoc>0?`<span style="font-size:11px;padding:2px 8px;border-radius:20px;background:#FDF0E6;color:#C25A00;font-weight:600">⚡ ${r.total_adhoc} ad hoc</span>`:''}
+          </div>
+          <div class="div-bar-track">
+            <div class="div-bar-fill" style="width:${Math.min(dp,100)}%"></div>
+          </div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:6px">
+            Nu. ${fmt(r.total_actual)} M of Nu. ${fmt(r.total_budget)} M
+          </div>
+        </a>`;
+    }).join('');
+
+  } catch(e){
+    document.getElementById('metrics').innerHTML=`<div class="err">Error loading data: ${e.message}</div>`;
+  }
+}
+
+function filterAPT() {
+  const selectedDiv = document.getElementById('filter-div').value;
+  const selectedStatus = document.getElementById('filter-status').value;
+
+  const filtered = globalKpiRows.filter(k => {
+    const matchesDiv = (selectedDiv === 'ALL' || k.division_code === selectedDiv);
+    const matchesStatus = (selectedStatus === 'ALL' || k.status === selectedStatus);
+    return matchesDiv && matchesStatus;
+  });
+
+  renderAPT(filtered);
+}
+
+function renderAPT(kpis){
+  const tb=document.getElementById('apt-body');
+  if(!kpis.length){
+    tb.innerHTML=`<tr><td colspan="9" style="text-align:center;padding:24px;color:var(--text-muted)">No matching records found. Try adjusting filters.</td></tr>`;
+    return;
+  }
+  let tBud=0,tAct=0,tActs=0;
+  const grouped={};
+  
+  kpis.forEach(k=>{ 
+    if(!grouped[k.division_code]) grouped[k.division_code]=[]; 
+    grouped[k.division_code].push(k); 
+  });
+  
+  let rows='';
+  Object.entries(grouped).forEach(([div,dKpis])=>{
+    const c=DIVISION_COLORS[div]||{accent:'#378ADD',light:'#E6F1FB'};
+    dKpis.forEach((k,i)=>{
+      const bal=+k.budget_allocated - +k.total_actual;
+      const revised=!!k.original_target||!!k.original_budget;
+      tBud+= +k.budget_allocated; tAct+= +k.total_actual; tActs+= +k.total_activities;
+      rows+=`<tr>
+        ${i===0?`<td rowspan="${dKpis.length}" style="vertical-align:middle">
+          <span class="div-pill" style="background:${c.light};color:${c.accent}">${div}</span>
+        </td>`:''}
+        <td>${k.kpi_name}${revised?`<span class="revised-badge">Revised</span>`:''}</td>
+        <td style="font-size:12px;color:var(--text-muted);max-width:200px">${k.target}</td>
+        <td class="amount">Nu. ${fmt(k.budget_allocated)}</td>
+        <td class="amount">Nu. ${fmt(k.total_actual)}</td>
+        <td class="amount ${bal<0?'over':''}">Nu. ${fmt(bal)}</td>
+        <td style="text-align:center">${k.total_activities}</td>
+        <td style="text-align:center">${+k.total_adhoc>0
+          ?`<span style="font-size:11px;padding:2px 8px;border-radius:20px;background:#FDF0E6;color:#C25A00;font-weight:600">⚡ ${k.total_adhoc}</span>`
+          :'<span style="color:var(--text-muted)">—</span>'}</td>
+        <td><span class="badge ${k.status}">${k.status === 'notstarted' ? 'Not Started' : k.status}</span></td>
+      </tr>`;
+    });
+  });
+  const tBal=tBud-tAct, tPct=tBud>0?Math.round(tAct/tBud*100):0;
+  rows+=`<tr class="totals-row">
+    <td colspan="3">Filter total</td>
+    <td class="amount">Nu. ${fmt(tBud)}</td>
+    <td class="amount">Nu. ${fmt(tAct)}</td>
+    <td class="amount ${tBal<0?'over':''}">Nu. ${fmt(tBal)}</td>
+    <td style="text-align:center">${tActs}</td>
+    <td></td>
+    <td><strong>${tPct}% used</strong></td>
+  </tr>`;
+  tb.innerHTML=rows;
+}
+
+async function loadRecentLog(){
+  const el=document.getElementById('recent-log');
+  try {
+    const rows=await query('/rest/v1/v_audit_log?select=*&limit=8');
+    if(!rows.length){
+      el.innerHTML=`<div style="text-align:center;padding:24px;color:var(--text-muted);
+        font-size:13px;background:var(--card);border-radius:var(--radius);
+        border:0.5px solid var(--border)">
+        No activity recorded yet. Start by adding KPIs in each division.</div>`;
       return;
     }
-
-    tbody.innerHTML = data.map(p => `
-      <tr>
-        <td>${p.kpi_name}</td>
-        <td><span class="badge">${p.kpi_type}</span></td>
-        <td>
-          ${p.kpi_type === 'quantitative' 
-            ? `<input type="number" value="${p.target_value||0}" onchange="updatePlan('${p.id}', this.value)"> ${p.unit||''}`
-            : `<em>Qualitative KPI - Milestones tracked</em>`}
-        </td>
-        <td>
-            <select class="status-badge" onchange="updateStatus('${p.id}', this.value)">
-                <option value="pending" ${p.status === 'pending' ? 'selected' : ''}>Pending</option>
-                <option value="in_progress" ${p.status === 'in_progress' ? 'selected' : ''}>In Progress</option>
-                <option value="completed" ${p.status === 'completed' ? 'selected' : ''}>Completed</option>
-            </select>
-        </td>
-      </tr>
-    `).join('');
-  } catch(e) { console.error(e); }
+    el.innerHTML=`
+      <div style="background:var(--card);border:0.5px solid var(--border);
+        border-radius:var(--radius);overflow:hidden;">
+        ${rows.map((r,i)=>{
+          const c=DIVISION_COLORS[r.division_code]||{accent:'#888',light:'#eee'};
+          const divPill=r.division_code
+            ?`<span style="font-size:10px;padding:1px 8px;border-radius:20px;font-weight:600;
+                background:${c.light};color:${c.accent};margin-right:6px">${r.division_code}</span>`:'';
+          const actName=r.activity_name
+            ?`<span style="font-weight:600">${r.activity_name}</span>`
+            :`<span style="color:var(--text-muted)">—</span>`;
+          const kpiName=r.kpi_name
+            ?`<span style="color:var(--text-muted)"> · ${r.kpi_name}</span>`:'';
+          const changeDetail=r.old_value
+            ?`<span style="color:var(--red);text-decoration:line-through;margin-right:4px">${r.old_value}</span>
+              <span style="color:var(--green);font-weight:500">${r.new_value||'—'}</span>`
+            :`<span style="color:var(--text-muted)">${r.new_value||'—'}</span>`;
+          return `
+            <div style="display:flex;align-items:flex-start;gap:12px;padding:12px 16px;
+              ${i<rows.length-1?'border-bottom:0.5px solid var(--border)':''}">
+              <div style="font-size:18px;margin-top:1px;min-width:24px;text-align:center">
+                ${actionIcon(r.field_changed)}
+              </div>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:13px;line-height:1.5">${divPill}${actName}${kpiName}</div>
+                <div style="font-size:12px;color:var(--text-muted);margin-top:2px">
+                  <strong style="color:var(--text)">${r.updated_by||'Unknown'}</strong>
+                  · ${r.field_changed||''}
+                  · ${changeDetail}
+                </div>
+              </div>
+              <div style="font-size:11px;color:var(--text-muted);white-space:nowrap;margin-top:2px">
+                ${timeAgo(r.updated_at)}
+              </div>
+            </div>`;
+        }).join('')}
+      </div>`;
+  } catch(e){
+    el.innerHTML=`<div class="err">Error loading activity log: ${e.message}</div>`;
+  }
 }
 
-async function updatePlan(id, val) {
-  await fetch(`${SUPA_URL}/rest/v1/quarterly_plans?id=eq.${id}`, {
-    method: 'PATCH',
-    headers: { apikey: SUPA_KEY, 'Content-Type': 'application/json', Authorization: 'Bearer ' + SUPA_KEY },
-    body: JSON.stringify({ target_value: val })
-  });
-}
-
-async function updateStatus(id, status) {
-  await fetch(`${SUPA_URL}/rest/v1/quarterly_plans?id=eq.${id}`, {
-    method: 'PATCH',
-    headers: { apikey: SUPA_KEY, 'Content-Type': 'application/json', Authorization: 'Bearer ' + SUPA_KEY },
-    body: JSON.stringify({ status: status })
-  });
-}
-
-loadPlans();
+load();
+loadRecentLog();
 </script>
 </body>
 </html>
