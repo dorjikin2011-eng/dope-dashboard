@@ -83,15 +83,24 @@ async function loadKPIs() {
     const res = await fetch(`${SUPA_URL}/rest/v1/kpis?division_code=eq.${div}`, {
       headers: { apikey: SUPA_KEY, Authorization: 'Bearer ' + SUPA_KEY }
     });
+    
     const data = await res.json();
     
-    if (data.length === 0) {
-      select.innerHTML = '<option value="">No KPIs found for this division</option>';
-      return;
-    }
+    // DEBUG: This will show you the exact error in your browser console
+    console.log("Supabase response:", data);
 
-    select.innerHTML = '<option value="">Select a KPI...</option>' + 
-      data.map(k => `<option value="${k.kpi_name}">${k.kpi_name}</option>`).join('');
+    // Check if data is actually an array before mapping
+    if (Array.isArray(data)) {
+        if (data.length === 0) {
+          select.innerHTML = '<option value="">No KPIs found for this division</option>';
+        } else {
+          select.innerHTML = '<option value="">Select a KPI...</option>' + 
+            data.map(k => `<option value="${k.kpi_name}">${k.kpi_name}</option>`).join('');
+        }
+    } else {
+        // This handles the error scenario
+        select.innerHTML = `<option value="">Error: ${data.message || 'Check Console'}</option>`;
+    }
   } catch (err) {
     console.error("Error loading KPIs:", err);
   }
