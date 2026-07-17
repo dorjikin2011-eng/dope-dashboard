@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Quarterly Planning — DoPE Dashboard</title>
+<!-- Reusing your existing styles from index.html for consistency -->
+<link rel="stylesheet" href="style.css"> <!-- If you have a separate CSS file, or copy the <style> from index.html here -->
+<style>
+    /* Copy the :root and general styles from index.html here to ensure the look matches perfectly */
+    /* Add specific styles for the planning board */
+    .planning-grid { display: grid; grid-template-columns: 1fr; gap: 20px; }
+    .status-badge { padding: 4px 8px; border-radius: 4px; border: 1px solid var(--border); font-size: 12px; }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="brand">ACC · DoPE <span>Quarterly Planning</span></div>
+  <div class="nav-links">
+    <a href="index.html">Home</a>
+    <a href="planning.html" class="active">Planning</a>
+    <a href="reports.html">Reports</a>
+  </div>
+</nav>
+
+<div class="page">
+  <div class="section">
+    <h2>Quarterly KPI Targets</h2>
+    <div class="filter-bar">
+      <div>
+        <label>Division:</label>
+        <select id="f-div" onchange="loadPlans()">
+          <option value="ADMD">ADMD</option><option value="EAD">EAD</option>
+          <option value="ED">ED</option><option value="PD">PD</option>
+        </select>
+      </div>
+      <div>
+        <label>Quarter:</label>
+        <select id="f-qtr" onchange="loadPlans()">
+          <option value="Q1">Q1</option><option value="Q2">Q2</option>
+          <option value="Q3">Q3</option><option value="Q4">Q4</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>KPI Name</th><th>Type</th><th>Target / Milestone</th><th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="plan-body">
+          <tr><td colspan="4" class="loading">Loading plans…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+const SUPA_URL = 'https://fiozcsxlnpvphrxwvzzy.supabase.co';
+const SUPA_KEY = 'YOUR_SUPABASE_KEY'; // Use the same key from index.html
+
+async function loadPlans() {
+  const div = document.getElementById('f-div').value;
+  const qtr = document.getElementById('f-qtr').value;
+  const tbody = document.getElementById('plan-body');
+  
+  try {
+    const response = await fetch(`${SUPA_URL}/rest/v1/quarterly_plans?division_code=eq.${div}&quarter=eq.${qtr}`, {
+      headers: { apikey: SUPA_KEY, Authorization: 'Bearer ' + SUPA_KEY }
+    });
+    const data = await response.json();
+    
+    if (data.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="4" style="text-align:center">No plans found for this quarter.</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = data.map(p => `
+      <tr>
+        <td>${p.kpi_name}</td>
+        <td><span class="badge">${p.kpi_type}</span></td>
+        <td>
+          ${p.kpi_type === 'quantitative' 
+            ? `<input type="number" value="${p.target_value||0}" onchange="updatePlan('${p.id}', this.value)"> ${p.unit||''}`
+            : `<em>Qualitative KPI - Milestones tracked</em>`}
+        </td>
+        <td>
+            <select class="status-badge" onchange="updateStatus('${p.id}', this.value)">
+                <option value="pending" ${p.status === 'pending' ? 'selected' : ''}>Pending</option>
+                <option value="in_progress" ${p.status === 'in_progress' ? 'selected' : ''}>In Progress</option>
+                <option value="completed" ${p.status === 'completed' ? 'selected' : ''}>Completed</option>
+            </select>
+        </td>
+      </tr>
+    `).join('');
+  } catch(e) { console.error(e); }
+}
+
+async function updatePlan(id, val) {
+  await fetch(`${SUPA_URL}/rest/v1/quarterly_plans?id=eq.${id}`, {
+    method: 'PATCH',
+    headers: { apikey: SUPA_KEY, 'Content-Type': 'application/json', Authorization: 'Bearer ' + SUPA_KEY },
+    body: JSON.stringify({ target_value: val })
+  });
+}
+
+async function updateStatus(id, status) {
+  await fetch(`${SUPA_URL}/rest/v1/quarterly_plans?id=eq.${id}`, {
+    method: 'PATCH',
+    headers: { apikey: SUPA_KEY, 'Content-Type': 'application/json', Authorization: 'Bearer ' + SUPA_KEY },
+    body: JSON.stringify({ status: status })
+  });
+}
+
+loadPlans();
+</script>
+</body>
+</html>
