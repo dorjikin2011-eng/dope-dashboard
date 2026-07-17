@@ -12,7 +12,7 @@
   .nav-links a.active{background:rgba(255,255,255,.18);color:#fff;}
   .page{max-width:900px;margin:0 auto;padding:28px 20px;}
   .card{background:var(--card);border:0.5px solid var(--border);border-radius:var(--radius);padding:24px;}
-  select, input{padding:8px;border:1px solid var(--border);border-radius:6px;font-size:14px;}
+  select, input{padding:8px;border:1px solid var(--border);border-radius:6px;font-size:14px;width:100%;}
   .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:20px;}
   .q-box{text-align:center;}
   label{display:block;font-size:12px;font-weight:600;margin-bottom:6px;color:var(--text-muted);}
@@ -33,7 +33,7 @@
     <h2 style="margin-bottom:20px">Prepare Quarterly Targets</h2>
     
     <div style="display:flex; gap:16px; margin-bottom:24px; flex-wrap:wrap;">
-      <div>
+      <div style="flex: 1;">
         <label>Division</label>
         <select id="f-div" onchange="loadKPIs()">
           <option value="">Select...</option>
@@ -41,16 +41,16 @@
           <option value="ED">ED</option><option value="PD">PD</option>
         </select>
       </div>
-      <div>
+      <div style="flex: 1;">
         <label>Year</label>
         <select id="f-year" onchange="loadKPIs()">
           <option value="2026">2026</option><option value="2027">2027</option>
         </select>
       </div>
-      <div style="flex-grow:1">
+      <div style="flex: 3;">
         <label>Select KPI</label>
-        <select id="f-kpi" onchange="loadQuarterlyData()" style="width:100%">
-          <option value="">Select a KPI first...</option>
+        <select id="f-kpi" onchange="loadQuarterlyData()">
+          <option value="">Select a division first...</option>
         </select>
       </div>
     </div>
@@ -71,22 +71,30 @@
 const SUPA_URL = 'https://fiozcsxlnpvphrxwvzzy.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZpb3pjc3hsbnB2cGhyeHd2enp5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwNzkxNTYsImV4cCI6MjA5NjY1NTE1Nn0.1XZn61C23mE5LkltAC1VU57-iWySlJsy1_9-ZRAW1I8';
 
+// Fix: Fetch from master 'kpis' table instead of 'quarterly_plans'
 async function loadKPIs() {
   const div = document.getElementById('f-div').value;
-  const year = document.getElementById('f-year').value;
   const select = document.getElementById('f-kpi');
   if(!div) return;
   
   select.innerHTML = '<option value="">Loading...</option>';
 
-  // Fetch unique KPI names for this division
-  const res = await fetch(`${SUPA_URL}/rest/v1/quarterly_plans?division_code=eq.${div}&select=kpi_name&distinct=true`, {
-    headers: { apikey: SUPA_KEY, Authorization: 'Bearer ' + SUPA_KEY }
-  });
-  const data = await res.json();
-  
-  select.innerHTML = '<option value="">Select a KPI...</option>' + 
-    data.map(k => `<option value="${k.kpi_name}">${k.kpi_name}</option>`).join('');
+  try {
+    const res = await fetch(`${SUPA_URL}/rest/v1/kpis?division_code=eq.${div}`, {
+      headers: { apikey: SUPA_KEY, Authorization: 'Bearer ' + SUPA_KEY }
+    });
+    const data = await res.json();
+    
+    if (data.length === 0) {
+      select.innerHTML = '<option value="">No KPIs found for this division</option>';
+      return;
+    }
+
+    select.innerHTML = '<option value="">Select a KPI...</option>' + 
+      data.map(k => `<option value="${k.kpi_name}">${k.kpi_name}</option>`).join('');
+  } catch (err) {
+    console.error("Error loading KPIs:", err);
+  }
 }
 
 async function loadQuarterlyData() {
@@ -99,6 +107,7 @@ async function loadQuarterlyData() {
   document.getElementById('plan-editor').style.display = 'block';
   document.getElementById('selected-kpi-name').innerText = kpiName;
   
+  // Fetch existing plans from quarterly_plans
   const res = await fetch(`${SUPA_URL}/rest/v1/quarterly_plans?kpi_name=eq.${encodeURIComponent(kpiName)}&division_code=eq.${div}&year=eq.${year}`, {
     headers: { apikey: SUPA_KEY, Authorization: 'Bearer ' + SUPA_KEY }
   });
@@ -107,7 +116,7 @@ async function loadQuarterlyData() {
   // Reset inputs
   ['q1','q2','q3','q4'].forEach(q => document.getElementById(q).value = '');
 
-  // Fill inputs
+  // Fill inputs if data exists
   data.forEach(d => {
     const el = document.getElementById(d.quarter.toLowerCase());
     if(el) el.value = d.target_value;
@@ -119,7 +128,6 @@ async function saveTarget(qtr, val) {
   const div = document.getElementById('f-div').value;
   const year = document.getElementById('f-year').value;
 
-  // We use POST with ignore duplicate preference to handle upsert
   await fetch(`${SUPA_URL}/rest/v1/quarterly_plans`, {
     method: 'POST',
     headers: { 
