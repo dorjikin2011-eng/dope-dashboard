@@ -71,38 +71,37 @@
 const SUPA_URL = 'https://fiozcsxlnpvphrxwvzzy.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZpb3pjc3hsbnB2cGhyeHd2enp5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwNzkxNTYsImV4cCI6MjA5NjY1NTE1Nn0.1XZn61C23mE5LkltAC1VU57-iWySlJsy1_9-ZRAW1I8';
 
-// Fix: Fetch from master 'kpis' table instead of 'quarterly_plans'
+const DIV_MAP = { 
+  "ADMD": 1, 
+  "EAD": 2, 
+  "ED": 3, 
+  "PD": 4 
+};
+
 async function loadKPIs() {
-  const div = document.getElementById('f-div').value;
+  const divName = document.getElementById('f-div').value;
   const select = document.getElementById('f-kpi');
-  if(!div) return;
+  
+  if(!divName) return;
+  const divId = DIV_MAP[divName];
   
   select.innerHTML = '<option value="">Loading...</option>';
 
   try {
-    const res = await fetch(`${SUPA_URL}/rest/v1/kpis?division_code=eq.${div}`, {
+    const res = await fetch(`${SUPA_URL}/rest/v1/kpis?division_id=eq.${divId}`, {
       headers: { apikey: SUPA_KEY, Authorization: 'Bearer ' + SUPA_KEY }
     });
-    
     const data = await res.json();
     
-    // DEBUG: This will show you the exact error in your browser console
-    console.log("Supabase response:", data);
-
-    // Check if data is actually an array before mapping
-    if (Array.isArray(data)) {
-        if (data.length === 0) {
-          select.innerHTML = '<option value="">No KPIs found for this division</option>';
-        } else {
-          select.innerHTML = '<option value="">Select a KPI...</option>' + 
-            data.map(k => `<option value="${k.kpi_name}">${k.kpi_name}</option>`).join('');
-        }
+    if (Array.isArray(data) && data.length > 0) {
+      select.innerHTML = '<option value="">Select a KPI...</option>' + 
+        data.map(k => `<option value="${k.kpi_name}">${k.kpi_name}</option>`).join('');
     } else {
-        // This handles the error scenario
-        select.innerHTML = `<option value="">Error: ${data.message || 'Check Console'}</option>`;
+      select.innerHTML = '<option value="">No KPIs found for this division</option>';
     }
   } catch (err) {
-    console.error("Error loading KPIs:", err);
+    console.error("Error:", err);
+    select.innerHTML = '<option value="">Error loading KPIs</option>';
   }
 }
 
@@ -116,20 +115,18 @@ async function loadQuarterlyData() {
   document.getElementById('plan-editor').style.display = 'block';
   document.getElementById('selected-kpi-name').innerText = kpiName;
   
-  // Fetch existing plans from quarterly_plans
   const res = await fetch(`${SUPA_URL}/rest/v1/quarterly_plans?kpi_name=eq.${encodeURIComponent(kpiName)}&division_code=eq.${div}&year=eq.${year}`, {
     headers: { apikey: SUPA_KEY, Authorization: 'Bearer ' + SUPA_KEY }
   });
   const data = await res.json();
 
-  // Reset inputs
   ['q1','q2','q3','q4'].forEach(q => document.getElementById(q).value = '');
-
-  // Fill inputs if data exists
-  data.forEach(d => {
-    const el = document.getElementById(d.quarter.toLowerCase());
-    if(el) el.value = d.target_value;
-  });
+  if (Array.isArray(data)) {
+    data.forEach(d => {
+      const el = document.getElementById(d.quarter.toLowerCase());
+      if(el) el.value = d.target_value;
+    });
+  }
 }
 
 async function saveTarget(qtr, val) {
@@ -147,7 +144,7 @@ async function saveTarget(qtr, val) {
     body: JSON.stringify({ 
         kpi_name: kpiName, 
         quarter: qtr, 
-        target_value: val, 
+        target_value: val ? parseFloat(val) : null, 
         division_code: div,
         year: parseInt(year)
     })
