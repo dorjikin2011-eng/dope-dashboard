@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Quarterly Plans Overview — DoPE Dashboard</title>
+<style>
+  :root { --purple:#534AB7; --bg:#F6F5F0; --card:#FFFFFF; --border:rgba(0,0,0,0.12); --text:#2C2C2A; --text-muted:#5F5E5A; --gray-light:#F1EFE8; --radius:10px; }
+  body{font-family:system-ui,sans-serif;background:var(--bg);color:var(--text);font-size:14px; margin:0; padding:0;}
+  nav{background:var(--purple);color:#fff;padding:0 24px;height:52px; display:flex;align-items:center;justify-content:space-between;}
+  .nav-links a{color:rgba(255,255,255,.85);text-decoration:none;padding:6px 14px; border-radius:6px;font-size:13px;}
+  .nav-links a.active{background:rgba(255,255,255,.18);color:#fff;}
+  .page{max-width:1200px;margin:0 auto;padding:28px 20px;}
+  
+  /* Metrics Grid */
+  .metrics-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px;}
+  @media(max-width:768px){.metrics-grid{grid-template-columns:repeat(2,1fr);}}
+  .metric-card{background:var(--card);border:0.5px solid var(--border);border-radius:var(--radius);padding:16px;text-align:center;}
+  .metric-val{font-size:24px;font-weight:700;color:var(--purple);margin-top:4px;}
+  .metric-label{font-size:12px;color:var(--text-muted);font-weight:600;text-transform:uppercase;}
+
+  .card{background:var(--card);border:0.5px solid var(--border);border-radius:var(--radius);padding:24px; margin-bottom:20px;}
+  select{padding:8px;border:1px solid var(--border);border-radius:6px;font-size:14px;background:#fff;}
+  
+  /* Table styling */
+  table{width:100%;border-collapse:collapse;margin-top:16px;text-align:left;font-size:13px;}
+  th, td{padding:12px;border-bottom:1px solid var(--border);vertical-align:top;}
+  th{background:var(--gray-light);font-weight:600;color:var(--text-muted);text-transform:uppercase;font-size:11px;}
+  
+  /* Status Badges */
+  .badge{padding:4px 8px;border-radius:12px;font-size:11px;font-weight:600;display:inline-block;text-align:center;}
+  .badge-completed{background:#E1F5FE;color:#0288D1;}
+  .badge-started{background:#E8F5E9;color:#2E7D32;}
+  .badge-delayed{background:#FFEBEE;color:#C62828;}
+  .badge-not-started{background:#F1EFE8;color:#5F5E5A;}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="brand">ACC · DoPE <span>Quarterly Monitoring Overview</span></div>
+  <div class="nav-links">
+    <a href="index.html">Home</a>
+    <a href="planning.html">Planning</a>
+    <a href="overview.html" class="active">Overview</a>
+  </div>
+</nav>
+
+<div class="page">
+  <!-- Top Metrics Bar -->
+  <div class="metrics-grid">
+    <div class="metric-card"><div class="metric-label">Total Plans</div><div class="metric-val" id="m-total">0</div></div>
+    <div class="metric-card"><div class="metric-label">Completed</div><div class="metric-val" id="m-completed" style="color:#0288D1;">0</div></div>
+    <div class="metric-card"><div class="metric-label">In Progress</div><div class="metric-val" id="m-started" style="color:#2E7D32;">0</div></div>
+    <div class="metric-card"><div class="metric-label">Delayed</div><div class="metric-val" id="m-delayed" style="color:#C62828;">0</div></div>
+  </div>
+
+  <div class="card">
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
+      <h2 style="margin:0; font-size:18px;">Quarterly Plans Master Monitoring</h2>
+      <div style="display:flex; gap:12px;">
+        <div>
+          <label style="font-size:11px;font-weight:600;color:var(--text-muted)">Filter Division</label>
+          <select id="filter-div" onchange="filterAndRender()">
+            <option value="">All Divisions</option>
+            <option value="ADMD">ADMD</option>
+            <option value="EAD">EAD</option>
+            <option value="ED">ED</option>
+            <option value="PD">PD</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:11px;font-weight:600;color:var(--text-muted)">Filter Year</label>
+          <select id="filter-year" onchange="filterAndRender()">
+            <option value="2026">2026</option>
+            <option value="2027">2027</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:11px;font-weight:600;color:var(--text-muted)">Filter Status</label>
+          <select id="filter-status" onchange="filterAndRender()">
+            <option value="">All Statuses</option>
+            <option value="Completed">Completed</option>
+            <option value="Started">Started</option>
+            <option value="Not Started">Not Started</option>
+            <option value="Delayed">Delayed</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div style="overflow-x:auto;">
+      <table>
+        <thead>
+          <tr>
+            <th>Division</th>
+            <th>Year / Qtr</th>
+            <th>KPI Name</th>
+            <th>Plan / Milestone</th>
+            <th>Status</th>
+            <th>Justification</th>
+          </tr>
+        </thead>
+        <tbody id="overview-table-body">
+          <tr><td colspan="6" style="text-align:center; color:var(--text-muted);">Loading plans overview...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+const SUPA_URL = 'https://fiozcsxlnpvphrxwvzzy.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZpb3pjc3hsbnB2cGhyeHd2enp5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwNzkxNTYsImV4cCI6MjA5NjY1NTE1Nn0.1XZn61C23mE5LkltAC1VU57-iWySlJsy1_9-ZRAW1I8';
+
+let allPlans = [];
+
+async function fetchAllPlans() {
+  try {
+    const res = await fetch(`${SUPA_URL}/rest/v1/quarterly_plans?select=*`, {
+      headers: { apikey: SUPA_KEY, Authorization: 'Bearer ' + SUPA_KEY }
+    });
+    const data = await res.json();
+    if (Array.isArray(data)) {
+      allPlans = data;
+      filterAndRender();
+    } else {
+      document.getElementById('overview-table-body').innerHTML = `<tr><td colspan="6" style="text-align:center; color:#C62828;">Error loading data from database.</td></tr>`;
+    }
+  } catch (err) {
+    console.error("Error fetching overview data:", err);
+  }
+}
+
+function filterAndRender() {
+  const divFilter = document.getElementById('filter-div').value;
+  const yearFilter = document.getElementById('filter-year').value;
+  const statusFilter = document.getElementById('filter-status').value;
+
+  const filtered = allPlans.filter(p => {
+    if (divFilter && p.division_code !== divFilter) return false;
+    if (yearFilter && String(p.year) !== yearFilter) return false;
+    if (statusFilter && p.status !== statusFilter) return false;
+    return true;
+  });
+
+  // Update Metrics counters based on filtered data (or all data)
+  document.getElementById('m-total').innerText = filtered.length;
+  document.getElementById('m-completed').innerText = filtered.filter(p => p.status === 'Completed').length;
+  document.getElementById('m-started').innerText = filtered.filter(p => p.status === 'Started').length;
+  document.getElementById('m-delayed').innerText = filtered.filter(p => p.status === 'Delayed').length;
+
+  const tbody = document.getElementById('overview-table-body');
+  if (filtered.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--text-muted);">No quarterly plans found matching the criteria.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(p => {
+    let badgeClass = 'badge-not-started';
+    if (p.status === 'Completed') badgeClass = 'badge-completed';
+    else if (p.status === 'Started') badgeClass = 'badge-started';
+    else if (p.status === 'Delayed') badgeClass = 'badge-delayed';
+
+    return `
+      <tr>
+        <td><strong>${p.division_code || '-'}</strong></td>
+        <td>${p.year} <br><span style="color:var(--purple); font-weight:600;">${p.quarter}</span></td>
+        <td><strong>${p.kpi_name}</strong></td>
+        <td>${p.target_value || '<span style="color:var(--text-muted);font-style:italic;">No description provided</span>'}</td>
+        <td><span class="badge ${badgeClass}">${p.status || 'Not Started'}</span></td>
+        <td style="color:var(--text-muted);">${p.justification || '-'}</td>
+      </tr>
+    `;
+  }).join('');
+}
+
+// Initial load on page startup
+fetchAllPlans();
+</script>
+</body>
+</html>
